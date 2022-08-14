@@ -6,7 +6,8 @@ class GUI(Frame):
     def __init__(self):
         super().__init__()
         
-        self.master.title('CYK')
+        self.master.title('Tangram')
+        self.master.geometry('700x700')
         self.pack(fill=BOTH, expand=1)
 
         self.init()
@@ -20,7 +21,7 @@ class GUI(Frame):
 def draw_blocks(canvas):
     for i in range(len(BLOCKS)):
         canvas.create_polygon(
-            BLOCKS[i].get_rotated_corners((100, 100), BLOCKS[i].rotation),
+            BLOCKS[i].get_rotated_vertices((100, 100), BLOCKS[i].rotation),
             outline = '#000',
             fill = BLOCKS[i].color
         )
