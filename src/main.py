@@ -1,10 +1,15 @@
-#=======================#
-# ENVIRONMENT VARIABLES #
-#=======================#
+#=============#
+# PREPARATION #
+#=============#
 
 from dotenv import load_dotenv, find_dotenv
+import logging
+
 
 load_dotenv(find_dotenv())
+
+logging.basicConfig(format='%(asctime)s %(levelname)s\t [%(name)s] %(message)s', level=logging.INFO)
+
 
 #===========#
 # MAIN CODE #
@@ -15,8 +20,11 @@ import cv
 import solver
 
 
+log = logging.getLogger('Main')
+
+
 def main():
-    print('[Main] HALLO!!')
+    log.info('HALLO!!')
 
     robot.init()
 

@@ -1,21 +1,25 @@
+import logging
 from pyniryo2 import NiryoRobot
 from pyniryo import uncompress_image, show_img, undistort_image, cv2, vision
 from math import pi
 from os import getenv
 
 
+log = logging.getLogger('Robot')
+
 bot: NiryoRobot = None
+
 
 def init():
     global bot
 
-    print('[Robot] Connecting to robot...')
+    log.info('Connecting to robot...')
     bot = NiryoRobot(getenv('NIRYO_IP'))
 
-    print('[Robot] Calibrating...')
+    log.info('Calibrating...')
     bot.arm.calibrate_auto()
 
-    print('[Robot] Homing...')
+    log.info('Homing...')
     bot.arm.move_to_home_pose()
 
 
@@ -37,4 +41,5 @@ def scan():
 
 
 def shutdown():
+    log.info('Shutting down...')
     bot.arm.go_to_sleep()
