@@ -1,4 +1,5 @@
-python-dotenv
+argparse
+numpy
 pyniryo
 pyniryo2
-numpy
+python-dotenv

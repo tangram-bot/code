@@ -2,13 +2,28 @@
 # PREPARATION #
 #=============#
 
+import argparse
 from dotenv import load_dotenv, find_dotenv
 import logging
 
 
 load_dotenv(find_dotenv())
+parser = argparse.ArgumentParser("env")
+parser.add_argument('-e', '--env', default="dev")
 
-logging.basicConfig(format='%(asctime)s %(levelname)s\t [%(name)s] %(message)s', level=logging.INFO)
+args = parser.parse_args()
+
+def getRunEnv():
+    return args.env
+
+logLevels={
+    'prod': logging.WARN,
+    'stage': logging.INFO,
+    'dev': logging.DEBUG,
+}
+logLevel = logLevels.get(getRunEnv(), logging.DEBUG)
+
+logging.basicConfig(format='%(asctime)s %(levelname)s\t [%(name)s] %(message)s', level=logLevel)
 
 
 #===========#
@@ -28,7 +43,8 @@ def main():
 
     robot.init()
 
-    # TODO: take picture
+    # take picture
+    img = robot.scan()
 
     # TODO: procecss picture & extract data
 
