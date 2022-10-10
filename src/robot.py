@@ -36,9 +36,9 @@ def scan():
             return
 
     bot.arm.calibrate_auto()
-    
+
     # move to scan position
-    bot.arm.move_pose([0.22, 0, 0.35, 0, pi/2, 0])
+    bot.arm.move_pose([0.20, 0, 0.35, 0, pi/2, 0])
 
     mtx, dist = bot.vision.get_camera_intrinsics()
     

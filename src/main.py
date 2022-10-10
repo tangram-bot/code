@@ -17,7 +17,7 @@ def getRunEnv():
     return args.env
 
 logLevels={
-    'prod': logging.WARN,
+    'prod': logging.INFO,
     'stage': logging.INFO,
     'dev': logging.DEBUG,
 }
