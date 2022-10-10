@@ -16,8 +16,19 @@ import solver
 
 
 def main():
+    print('[Main] HALLO!!')
+
     robot.init()
-    robot.set_max_velocity(100)
+
+    # TODO: take picture
+
+    # TODO: procecss picture & extract data
+
+    # TODO: find solution
+    
+    # TODO: move blocks to correct positions
+
+    robot.shutdown()
 
 
 if __name__ == '__main__':

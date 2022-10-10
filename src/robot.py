@@ -9,34 +9,32 @@ bot: NiryoRobot = None
 def init():
     global bot
 
+    print('[Robot] Connecting to robot...')
     bot = NiryoRobot(getenv('NIRYO_IP'))
 
-    print('[Niryo] Calibrating...')
+    print('[Robot] Calibrating...')
     bot.arm.calibrate_auto()
 
-    print('[Niryo] Homing...')
+    print('[Robot] Homing...')
     bot.arm.move_to_home_pose()
 
-def set_max_velocity(self, max_vel):
-    bot.arm.set_arm_max_velocity(max_vel)
 
-# self.bot.arm.move_pose([0.28, 0, 0.35, 0, pi/2, 0])
+def scan():
+    # self.bot.arm.move_pose([0.28, 0, 0.35, 0, pi/2, 0])
 
-# mtx, dist = bot.vision.get_camera_intrinsics()
+    # mtx, dist = bot.vision.get_camera_intrinsics()
+    
+    # img = bot.vision.get_img_compressed()
+    # img = uncompress_image(img)
+    # img = undistort_image(img, mtx, dist)
+
+    # ws = vision.extract_img_workspace(img, (36/23.6))
+
+    # if ws is None:
+    #     continue
+
+    pass
 
 
-# while True:
-#     img = bot.vision.get_img_compressed()
-#     img = uncompress_image(img)
-#     img = undistort_image(img, mtx, dist)
-
-#     ws = vision.extract_img_workspace(img, (36/23.6))
-
-#     if ws is None:
-#         continue
-
-#     ws = vision.threshold_hsv(ws, [0, 92, 64], [6, 220, 255])
-
-#     show_img('ws', ws)
-
-# bot.arm.go_to_sleep()
+def shutdown():
+    bot.arm.go_to_sleep()
