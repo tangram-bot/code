@@ -4,20 +4,21 @@ from math import pi
 from os import getenv
 
 
-class Niryo:
-    bot: NiryoRobot = None
+bot: NiryoRobot = None
 
-    def init(self):
-        self.bot = NiryoRobot(getenv('NIRYO_IP'))
+def init():
+    global bot
 
-        print('[Niryo] Calibrating...')
-        self.bot.arm.calibrate_auto()
+    bot = NiryoRobot(getenv('NIRYO_IP'))
 
-        print('[Niryo] Homing...')
-        self.bot.arm.move_to_home_pose()
+    print('[Niryo] Calibrating...')
+    bot.arm.calibrate_auto()
 
-    def set_max_velocity(self, max_vel):
-        self.bot.arm.set_arm_max_velocity(max_vel)
+    print('[Niryo] Homing...')
+    bot.arm.move_to_home_pose()
+
+def set_max_velocity(self, max_vel):
+    bot.arm.set_arm_max_velocity(max_vel)
 
 # self.bot.arm.move_pose([0.28, 0, 0.35, 0, pi/2, 0])
 

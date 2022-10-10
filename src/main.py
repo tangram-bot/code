@@ -10,13 +10,14 @@ load_dotenv(find_dotenv())
 # MAIN CODE #
 #===========#
 
-from niryo import Niryo
+import robot
+import cv
+import solver
+
 
 def main():
-    bot = Niryo()
-
-    bot.init()
-    bot.set_max_velocity(100)
+    robot.init()
+    robot.set_max_velocity(100)
 
 
 if __name__ == '__main__':
