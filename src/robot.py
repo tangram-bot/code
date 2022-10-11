@@ -7,49 +7,61 @@ from os import getenv
 from main import getRunEnv
 
 
-log = logging.getLogger('Robot')
+L = logging.getLogger('Robot')
+
+SCAN_POSE = [0.20, 0.0, 0.35, 0.0, pi/2, 0.0]
+WS_RATIO = 36 / 23.6
 
 bot: NiryoRobot = None
+mtx = None
+dist = None
 
 
 def init():
     global bot
+    global mtx
+    global dist
 
-    log.info('Connecting...')
+    L.info('Connecting...')
     ip = getenv('NIRYO_IP') if getRunEnv() == "prod" else "127.0.0.1"
     if(getRunEnv() == "dev"):
-        log.info("DEV runtime, mocking robot")
+        L.info("DEV runtime, mocking robot")
         return
     
     bot = NiryoRobot(ip)
 
-    log.info('Calibrating...')
-    bot.arm.request_new_calibration()
+    L.info('Calibrating...')
+    bot.arm.calibrate_auto()
 
-    log.info('Homing...')
+    L.info('Homing...')
     bot.arm.move_to_home_pose()
+
+    mtx, dist = bot.vision.get_camera_intrinsics()
 
 
 def scan():
     if(bot == None): 
-            # TODO : return mock image
-            return
+        # TODO : return mock image
+        return
 
     bot.arm.calibrate_auto()
 
     # move to scan position
-    bot.arm.move_pose([0.20, 0, 0.35, 0, pi/2, 0])
-
-    mtx, dist = bot.vision.get_camera_intrinsics()
+    bot.arm.move_pose(SCAN_POSE)
     
-    # procecss image
-    img = bot.vision.get_img_compressed()
-    img = uncompress_image(img)
-    img = undistort_image(img, mtx, dist)
-
-    ws = vision.extract_img_workspace(img, (36/23.6))
+    # take picture & get workspace
+    img = take_picture()
+    ws = vision.extract_img_workspace(img, WS_RATIO)
 
     return ws
+
+
+def take_picture():
+    img_comp = bot.vision.get_img_compressed()
+    img_dist = uncompress_image(img_comp)
+    img = undistort_image(img_dist, mtx, dist)
+
+    return img
 
 
 def pick(x, y):
@@ -68,6 +80,7 @@ def pick(x, y):
     bot.tool.close_gripper()
     bot.arm.move_linear_pose(poseUp)
 
+
 def place(x, y, rotate):
     if(bot == None):
         return
@@ -84,8 +97,10 @@ def place(x, y, rotate):
     bot.tool.open_gripper()
     bot.arm.move_linear_pose(poseUp)
 
+
 def shutdown():
     if(bot == None):
         return
-    log.info('Shutting down...')
+
+    L.info('Shutting down...')
     bot.arm.go_to_sleep()

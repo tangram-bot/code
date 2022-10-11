@@ -3,8 +3,9 @@ from typing import List
 from tangram import Block, Shadow
 
 
-log = logging.getLogger('Solver')
+L = logging.getLogger('Solver')
 
 
 def solve(blocks: List[Block], shadow: Shadow):
+    print('solve()', blocks, shadow)
     pass

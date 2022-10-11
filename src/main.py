@@ -35,22 +35,24 @@ import cv
 import solver
 
 
-log = logging.getLogger('Main')
+L = logging.getLogger('Main')
 
 
 def main():
-    log.info('HALLO!!')
+    L.info('HALLO!!')
 
     robot.init()
 
     # take picture
     img = robot.scan()
 
-    # TODO: procecss picture & extract data
+    # procecss picture & extract data
+    # blocks, shadow = cv.process_image(img)
 
-    # TODO: find solution
+    # find solution
+    # solver.solve(blocks, shadow)
     
-    # TODO: move blocks to correct positions
+    # move blocks to correct positions
 
     robot.shutdown()
 
