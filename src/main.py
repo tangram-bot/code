@@ -47,10 +47,10 @@ def main():
     img = robot.scan()
 
     # procecss picture & extract data
-    # blocks, shadow = cv.process_image(img)
+    blocks, shadow = cv.process_image(img)
 
     # find solution
-    # solver.solve(blocks, shadow)
+    solver.solve(blocks, shadow)
     
     # move blocks to correct positions
 
