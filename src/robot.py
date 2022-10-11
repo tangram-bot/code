@@ -13,7 +13,7 @@ bot: NiryoRobot = None
 def init():
     global bot
 
-    log.info('Connecting to robot...')
+    log.info('Connecting...')
     bot = NiryoRobot(getenv('NIRYO_IP'))
 
     log.info('Calibrating...')
