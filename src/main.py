@@ -48,13 +48,11 @@ def main():
     cv.create_trackbar_uis()
 
     # procecss picture & extract data
-    while True:
-        img = robot.take_picture()
-        # blocks = cv.process_blocks(img)
+    blocks = cv.process_blocks(img)
     
-    b = blocks[0]
-
-    robot.pick(b[0], b[1])
+    for b in blocks:
+        robot.pick(b[0], b[1])
+        robot.place(b[0], b[1], 0)
 
     while True:
         pass
