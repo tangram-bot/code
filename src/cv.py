@@ -43,7 +43,7 @@ def create_trackbar_uis():
     )
 
     open_input_window(
-        "CV: Blocks",
+        "CV: Shadow",
         mask_lower_h     = 0, 
         mask_lower_s     = 0, 
         mask_lower_v     = 47, 

@@ -34,6 +34,8 @@ import robot
 import cv
 import solver
 
+from pyniryo import cv2
+
 
 L = logging.getLogger('Main')
 
@@ -55,6 +57,7 @@ def main():
         robot.place(b[0], b[1], 0)
 
     while True:
+        cv2.waitKey(1)
         pass
 
     # find solution

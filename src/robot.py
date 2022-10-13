@@ -2,7 +2,7 @@ import logging
 import random
 import numpy as np
 from pyniryo2 import NiryoRobot
-from pyniryo import uncompress_image, undistort_image, vision
+from pyniryo import uncompress_image, undistort_image, vision, cv2
 from math import pi
 from os import getenv
 from PIL import Image
@@ -14,7 +14,11 @@ L = logging.getLogger('Robot')
 
 SCAN_POSE_BLOCKS = [0.01, 0.16, 0.35, 0.0, pi/2, 1.57]
 SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
-WS_RATIO = 297 / 210 # in mm
+
+WORKSPACE_WIDTH = 297
+WORKSPACE_HEIGHT = 210
+WORKSPACE_RATIO = WORKSPACE_WIDTH / WORKSPACE_HEIGHT
+
 MOCK_IMG_FILES = ["test-01.png", "test-02.png", "test-03.png"]
 
 bot: NiryoRobot = None
@@ -43,10 +47,17 @@ def init():
     mtx, dist = bot.vision.get_camera_intrinsics()
 
 
+# TODO: Separate Mock-Bilder für Blocks und Shadow
 def mock_image():
     img_file = random.choice(MOCK_IMG_FILES)
+    
     img = Image.open(f"img/{img_file}")
-    return np.asarray(img)
+    
+    img = np.asarray(img)
+    
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    return img
 
 
 def scan_blocks():
@@ -64,6 +75,19 @@ def scan_blocks():
     return ws
 
 
+def scan_shadow():
+    if(bot == None):
+        return mock_image()
+
+    bot.arm.calibrate_auto()
+
+    bot.arm.move_pose(SCAN_POSE_SHADOW)
+
+    ws = take_picture()
+
+    return ws
+
+
 def take_picture():
     L.info("Taking picture")
     img_comp = bot.vision.get_img_compressed()
@@ -72,7 +96,7 @@ def take_picture():
     
     img = undistort_image(img_dist, mtx, dist)
 
-    ws = vision.extract_img_workspace(img, WS_RATIO)
+    ws = vision.extract_img_workspace(img, WORKSPACE_RATIO)
 
     if ws is None:
         raise Exception('Could not extract workspace from image')

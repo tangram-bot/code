@@ -1,5 +1,6 @@
 argparse
 numpy
+pillow
 pyniryo
 pyniryo2
 python-dotenv
