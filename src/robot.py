@@ -1,8 +1,11 @@
 import logging
+import random
+import numpy as np
 from pyniryo2 import NiryoRobot
 from pyniryo import uncompress_image, undistort_image, vision
 from math import pi
 from os import getenv
+from PIL import Image
 
 from main import getRunEnv
 
@@ -12,6 +15,7 @@ L = logging.getLogger('Robot')
 SCAN_POSE_BLOCKS = [0.01, 0.16, 0.35, 0.0, pi/2, 1.57]
 SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
 WS_RATIO = 297 / 210 # in mm
+MOCK_IMG_FILES = ["test-01.png", "test-02.png", "test-03.png"]
 
 bot: NiryoRobot = None
 mtx = None
@@ -39,10 +43,15 @@ def init():
     mtx, dist = bot.vision.get_camera_intrinsics()
 
 
+def mock_image():
+    img_file = random.choice(MOCK_IMG_FILES)
+    img = Image.open(f"img/{img_file}")
+    return np.asarray(img)
+
+
 def scan_blocks():
     if(bot == None): 
-        # TODO : return mock image
-        return
+        return mock_image()
 
     bot.arm.calibrate_auto()
 
