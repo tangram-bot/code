@@ -7,19 +7,19 @@ from tangram import Block, Shadow
 
 L = logging.getLogger('CV')
 
-def openInputWindow(windowTitle, maskLowerH, maskLowerS, maskLowerV, maskUpperH, maskUpperS, maskUpperV, canny1, canny2, dilateKernel, minContourArea, cornerAccuracy):
-    cv2.namedWindow(windowTitle)
-    cv2.createTrackbar('Mask Lower H',      windowTitle, maskLowerH,     255, lambda x: x)
-    cv2.createTrackbar('Mask Lower S',      windowTitle, maskLowerS,     255, lambda x: x)
-    cv2.createTrackbar('Mask Lower V',      windowTitle, maskLowerV,     255, lambda x: x)
-    cv2.createTrackbar('Mask Upper H',      windowTitle, maskUpperH,     255, lambda x: x)
-    cv2.createTrackbar('Mask Upper S',      windowTitle, maskUpperS,     255, lambda x: x)
-    cv2.createTrackbar('Mask Upper V',      windowTitle, maskUpperV,     255, lambda x: x)
-    cv2.createTrackbar('Canny 1',           windowTitle, canny1,         255, lambda x: x)
-    cv2.createTrackbar('Canny 2',           windowTitle, canny2,         255, lambda x: x)
-    cv2.createTrackbar('Dilate Kernel',     windowTitle, dilateKernel,   10, lambda x: x)
-    cv2.createTrackbar('Min Contour Area',  windowTitle, minContourArea, 500, lambda x: x)
-    cv2.createTrackbar('Corner Accuracy',   windowTitle, CornerAccuracy, 1000, lambda x: x)
+def open_input_window(window_title, mask_lower_h, mask_lower_s, mask_lower_v, mask_upper_h, mask_upper_s, mask_upper_v, canny1, canny2, dilate_kernel, min_contour_area, corner_accuracy):
+    cv2.namedWindow(window_title)
+    cv2.createTrackbar('Mask Lower H',      window_title, mask_lower_h,     255, lambda x: x)
+    cv2.createTrackbar('Mask Lower S',      window_title, mask_lower_s,     255, lambda x: x)
+    cv2.createTrackbar('Mask Lower V',      window_title, mask_lower_v,     255, lambda x: x)
+    cv2.createTrackbar('Mask Upper H',      window_title, mask_upper_h,     255, lambda x: x)
+    cv2.createTrackbar('Mask Upper S',      window_title, mask_upper_s,     255, lambda x: x)
+    cv2.createTrackbar('Mask Upper V',      window_title, mask_upper_v,     255, lambda x: x)
+    cv2.createTrackbar('Canny 1',           window_title, canny1,           255, lambda x: x)
+    cv2.createTrackbar('Canny 2',           window_title, canny2,           255, lambda x: x)
+    cv2.createTrackbar('Dilate Kernel',     window_title, dilate_kernel,    10, lambda x: x)
+    cv2.createTrackbar('Min Contour Area',  window_title, min_contour_area, 500, lambda x: x)
+    cv2.createTrackbar('Corner Accuracy',   window_title, corner_accuracy,  1000, lambda x: x)
 
 
 def create_trackbar_uis():
@@ -27,34 +27,34 @@ def create_trackbar_uis():
     cv2.namedWindow('CV: General')
     cv2.createTrackbar('Blur Kernel',       'CV: General', 1,   10, lambda x: x)
 
-    openInputWindow(
+    open_input_window(
         "CV: Blocks",
-        maskLowerH     = 0, 
-        maskLowerS     = 0, 
-        maskLowerV     = 30, 
-        maskUpperH     = 115, 
-        maskUpperS     = 255, 
-        maskUpperV     = 255, 
-        canny1         = 0, 
-        canny2         = 0, 
-        dilateKernel   = 1, 
-        minContourArea = 200, 
-        cornerAccuracy = 5
+        mask_lower_h     = 0, 
+        mask_lower_s     = 0, 
+        mask_lower_v     = 30, 
+        mask_upper_h     = 115, 
+        mask_upper_s     = 255, 
+        mask_upper_v     = 255, 
+        canny1           = 0, 
+        canny2           = 0, 
+        dilate_kernel    = 1, 
+        min_contour_area = 200, 
+        corner_accuracy  = 5
     )
 
-    openInputWindow(
+    open_input_window(
         "CV: Blocks",
-        maskLowerH     = 0, 
-        maskLowerS     = 0, 
-        maskLowerV     = 47, 
-        maskUpperH     = 57, 
-        maskUpperS     = 255, 
-        maskUpperV     = 255, 
-        canny1         = 0, 
-        canny2         = 0, 
-        dilateKernel   = 1, 
-        minContourArea = 20, 
-        cornerAccuracy = 7
+        mask_lower_h     = 0, 
+        mask_lower_s     = 0, 
+        mask_lower_v     = 47, 
+        mask_upper_h     = 57, 
+        mask_upper_s     = 255, 
+        mask_upper_v     = 255, 
+        canny1           = 0, 
+        canny2           = 0, 
+        dilate_kernel    = 1, 
+        min_contour_area = 20, 
+        corner_accuracy  = 7
     )
 
 
