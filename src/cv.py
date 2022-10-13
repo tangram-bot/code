@@ -7,36 +7,55 @@ from tangram import Block, Shadow
 
 L = logging.getLogger('CV')
 
+def openInputWindow(windowTitle, maskLowerH, maskLowerS, maskLowerV, maskUpperH, maskUpperS, maskUpperV, canny1, canny2, dilateKernel, minContourArea, CornerAccuracy):
+    cv2.namedWindow(windowTitle)
+    cv2.createTrackbar('Mask Lower H',      windowTitle, maskLowerH,     255, lambda x: x)
+    cv2.createTrackbar('Mask Lower S',      windowTitle, maskLowerS,     255, lambda x: x)
+    cv2.createTrackbar('Mask Lower V',      windowTitle, maskLowerV,     255, lambda x: x)
+    cv2.createTrackbar('Mask Upper H',      windowTitle, maskUpperH,     255, lambda x: x)
+    cv2.createTrackbar('Mask Upper S',      windowTitle, maskUpperS,     255, lambda x: x)
+    cv2.createTrackbar('Mask Upper V',      windowTitle, maskUpperV,     255, lambda x: x)
+    cv2.createTrackbar('Canny 1',           windowTitle, canny1,         255, lambda x: x)
+    cv2.createTrackbar('Canny 2',           windowTitle, canny2,         255, lambda x: x)
+    cv2.createTrackbar('Dilate Kernel',     windowTitle, dilateKernel,   10, lambda x: x)
+    cv2.createTrackbar('Min Contour Area',  windowTitle, minContourArea, 500, lambda x: x)
+    cv2.createTrackbar('Corner Accuracy',   windowTitle, CornerAccuracy, 1000, lambda x: x)
+
 
 def create_trackbar_uis():
+
     cv2.namedWindow('CV: General')
     cv2.createTrackbar('Blur Kernel',       'CV: General', 1,   10, lambda x: x)
 
-    cv2.namedWindow('CV: Blocks')
-    cv2.createTrackbar('Mask Lower H',      'CV: Blocks', 0,    255, lambda x: x)
-    cv2.createTrackbar('Mask Lower S',      'CV: Blocks', 0,    255, lambda x: x)
-    cv2.createTrackbar('Mask Lower V',      'CV: Blocks', 30,   255, lambda x: x)
-    cv2.createTrackbar('Mask Upper H',      'CV: Blocks', 115,  255, lambda x: x)
-    cv2.createTrackbar('Mask Upper S',      'CV: Blocks', 255,  255, lambda x: x)
-    cv2.createTrackbar('Mask Upper V',      'CV: Blocks', 255,  255, lambda x: x)
-    cv2.createTrackbar('Canny 1',           'CV: Blocks', 0,    255, lambda x: x)
-    cv2.createTrackbar('Canny 2',           'CV: Blocks', 0,    255, lambda x: x)
-    cv2.createTrackbar('Dilate Kernel',     'CV: Blocks', 1,    10, lambda x: x)
-    cv2.createTrackbar('Min Contour Area',  'CV: Blocks', 200,  500, lambda x: x)
-    cv2.createTrackbar('Corner Accuracy',   'CV: Blocks', 5,    1000, lambda x: x)
+    openInputWindow(
+        "CV: Blocks",
+        maskLowerH     = 0, 
+        maskLowerS     = 0, 
+        maskLowerV     = 30, 
+        maskUpperH     = 115, 
+        maskUpperS     = 255, 
+        maskUpperV     = 255, 
+        canny1         = 0, 
+        canny2         = 0, 
+        dilateKernel   = 1, 
+        minContourArea = 200, 
+        cornerAccuracy = 5
+    )
 
-    cv2.namedWindow('CV: Shadow')
-    cv2.createTrackbar('Mask Lower H',      'CV: Shadow', 0,    255, lambda x: x)
-    cv2.createTrackbar('Mask Lower S',      'CV: Shadow', 0,    255, lambda x: x)
-    cv2.createTrackbar('Mask Lower V',      'CV: Shadow', 47,   255, lambda x: x)
-    cv2.createTrackbar('Mask Upper H',      'CV: Shadow', 57,   255, lambda x: x)
-    cv2.createTrackbar('Mask Upper S',      'CV: Shadow', 255,  255, lambda x: x)
-    cv2.createTrackbar('Mask Upper V',      'CV: Shadow', 255,  255, lambda x: x)
-    cv2.createTrackbar('Canny 1',           'CV: Shadow', 0,    255, lambda x: x)
-    cv2.createTrackbar('Canny 2',           'CV: Shadow', 0,    255, lambda x: x)
-    cv2.createTrackbar('Dilate Kernel',     'CV: Shadow', 1,    10, lambda x: x)
-    cv2.createTrackbar('Min Contour Area',  'CV: Shadow', 20,   200, lambda x: x)
-    cv2.createTrackbar('Corner Accuracy',   'CV: Shadow', 7,    1000, lambda x: x)
+    openInputWindow(
+        "CV: Blocks",
+        maskLowerH     = 0, 
+        maskLowerS     = 0, 
+        maskLowerV     = 47, 
+        maskUpperH     = 57, 
+        maskUpperS     = 255, 
+        maskUpperV     = 255, 
+        canny1         = 0, 
+        canny2         = 0, 
+        dilateKernel   = 1, 
+        minContourArea = 20, 
+        cornerAccuracy = 7
+    )
 
 
 def process_blocks(img) -> List[Block]:
