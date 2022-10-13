@@ -1,6 +1,6 @@
 import logging
 from pyniryo2 import NiryoRobot
-from pyniryo import uncompress_image, show_img, undistort_image, cv2, vision
+from pyniryo import uncompress_image, undistort_image, vision
 from math import pi
 from os import getenv
 
@@ -9,7 +9,8 @@ from main import getRunEnv
 
 L = logging.getLogger('Robot')
 
-SCAN_POSE = [0.20, 0.0, 0.35, 0.0, pi/2, 0.0]
+SCAN_POSE_BLOCKS = [0.01, 0.16, 0.35, 0.0, pi/2, 1.57]
+SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
 WS_RATIO = 36 / 23.6
 
 bot: NiryoRobot = None
@@ -46,7 +47,7 @@ def scan():
     bot.arm.calibrate_auto()
 
     # move to scan position
-    bot.arm.move_pose(SCAN_POSE)
+    bot.arm.move_pose(SCAN_POSE_BLOCKS)
     
     # take picture & get workspace
     img = take_picture()
@@ -66,15 +67,15 @@ def take_picture():
 def pick(x, y):
     if(bot == None):
         return
-    
-    pose = bot.vision.get_target_pose_from_rel("labor", 0.1, x, y, pi/2)
-    poseUp = pose
-    poseUp.z = 0.5
+
+    poseUp = bot.vision.get_target_pose_from_rel("blocks", 0.2, x, y, pi/2)
+    poseDown = bot.vision.get_target_pose_from_rel("blocks", 0, x, y, pi/2)
+
 
     # move to position
     bot.tool.open_gripper()
     bot.arm.move_pose(poseUp)
-    bot.arm.move_linear_pose(pose)
+    bot.arm.move_linear_pose(poseDown)
     # pick object
     bot.tool.close_gripper()
     bot.arm.move_linear_pose(poseUp)
@@ -84,13 +85,12 @@ def place(x, y, rotate):
     if(bot == None):
         return
     
-    pose = bot.vision.get_target_pose_from_rel("labor", 0.1, x, y, rotate)
-    poseUp = pose
-    poseUp.z = 0.5
+    poseUp = bot.vision.get_target_pose_from_rel("shadow", 0.2, x, y, rotate)
+    poseDown = bot.vision.get_target_pose_from_rel("shadow", 0, x, y, rotate)
 
     # move to position
     bot.arm.move_pose(poseUp)
-    bot.arm.move_linear_pose(pose)
+    bot.arm.move_linear_pose(poseDown)
 
     # place object
     bot.tool.open_gripper()
