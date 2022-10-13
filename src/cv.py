@@ -7,7 +7,7 @@ from tangram import Block, Shadow
 
 L = logging.getLogger('CV')
 
-def openInputWindow(windowTitle, maskLowerH, maskLowerS, maskLowerV, maskUpperH, maskUpperS, maskUpperV, canny1, canny2, dilateKernel, minContourArea, CornerAccuracy):
+def openInputWindow(windowTitle, maskLowerH, maskLowerS, maskLowerV, maskUpperH, maskUpperS, maskUpperV, canny1, canny2, dilateKernel, minContourArea, cornerAccuracy):
     cv2.namedWindow(windowTitle)
     cv2.createTrackbar('Mask Lower H',      windowTitle, maskLowerH,     255, lambda x: x)
     cv2.createTrackbar('Mask Lower S',      windowTitle, maskLowerS,     255, lambda x: x)
