@@ -11,7 +11,7 @@ L = logging.getLogger('Robot')
 
 SCAN_POSE_BLOCKS = [0.01, 0.16, 0.35, 0.0, pi/2, 1.57]
 SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
-WS_RATIO = 36 / 23.6
+WS_RATIO = 297 / 210 # in mm
 
 bot: NiryoRobot = None
 mtx = None
@@ -39,7 +39,7 @@ def init():
     mtx, dist = bot.vision.get_camera_intrinsics()
 
 
-def scan():
+def scan_blocks():
     if(bot == None): 
         # TODO : return mock image
         return
@@ -49,19 +49,24 @@ def scan():
     # move to scan position
     bot.arm.move_pose(SCAN_POSE_BLOCKS)
     
-    # take picture & get workspace
-    img = take_picture()
-    ws = vision.extract_img_workspace(img, WS_RATIO)
+    ws = take_picture()
 
     return ws
 
 
 def take_picture():
     img_comp = bot.vision.get_img_compressed()
+    
     img_dist = uncompress_image(img_comp)
+    
     img = undistort_image(img_dist, mtx, dist)
 
-    return img
+    ws = vision.extract_img_workspace(img, WS_RATIO)
+
+    if ws is None:
+        raise Exception('Could not extract workspace from image')
+
+    return ws
 
 
 def pick(x, y):

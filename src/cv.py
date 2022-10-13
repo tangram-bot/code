@@ -10,20 +10,20 @@ L = logging.getLogger('CV')
 
 def create_trackbar_uis():
     cv2.namedWindow('CV: General')
-    cv2.createTrackbar('Blur Kernel',       'CV: General', 0,   10, lambda x: x)
+    cv2.createTrackbar('Blur Kernel',       'CV: General', 1,   10, lambda x: x)
 
     cv2.namedWindow('CV: Blocks')
     cv2.createTrackbar('Mask Lower H',      'CV: Blocks', 0,    255, lambda x: x)
     cv2.createTrackbar('Mask Lower S',      'CV: Blocks', 0,    255, lambda x: x)
-    cv2.createTrackbar('Mask Lower V',      'CV: Blocks', 47,   255, lambda x: x)
-    cv2.createTrackbar('Mask Upper H',      'CV: Blocks', 57,   255, lambda x: x)
+    cv2.createTrackbar('Mask Lower V',      'CV: Blocks', 30,   255, lambda x: x)
+    cv2.createTrackbar('Mask Upper H',      'CV: Blocks', 115,  255, lambda x: x)
     cv2.createTrackbar('Mask Upper S',      'CV: Blocks', 255,  255, lambda x: x)
     cv2.createTrackbar('Mask Upper V',      'CV: Blocks', 255,  255, lambda x: x)
     cv2.createTrackbar('Canny 1',           'CV: Blocks', 0,    255, lambda x: x)
     cv2.createTrackbar('Canny 2',           'CV: Blocks', 0,    255, lambda x: x)
     cv2.createTrackbar('Dilate Kernel',     'CV: Blocks', 1,    10, lambda x: x)
-    cv2.createTrackbar('Min Contour Area',  'CV: Blocks', 20,   200, lambda x: x)
-    cv2.createTrackbar('Corner Accuracy',   'CV: Blocks', 7,    1000, lambda x: x)
+    cv2.createTrackbar('Min Contour Area',  'CV: Blocks', 200,  500, lambda x: x)
+    cv2.createTrackbar('Corner Accuracy',   'CV: Blocks', 5,    1000, lambda x: x)
 
     cv2.namedWindow('CV: Shadow')
     cv2.createTrackbar('Mask Lower H',      'CV: Shadow', 0,    255, lambda x: x)
@@ -38,23 +38,9 @@ def create_trackbar_uis():
     cv2.createTrackbar('Min Contour Area',  'CV: Shadow', 20,   200, lambda x: x)
     cv2.createTrackbar('Corner Accuracy',   'CV: Shadow', 7,    1000, lambda x: x)
 
-create_trackbar_uis()
 
+def process_blocks(img) -> List[Block]:
 
-def process_image(img) -> Tuple[List[Block], Shadow]:
-
-    # blur image to reduce noise & smooth out edges
-    kernel_size = cv2.getTrackbarPos('Blur Kernel', 'CV: General')
-    blur_kernel = (kernel_size, kernel_size)
-    img_blurred = cv2.GaussianBlur(img, blur_kernel, 1)
-
-    blocks = find_blocks(img_blurred)
-    # shadow = find_shadow(img_blurred)
-
-    return blocks, None
-
-
-def find_blocks(img) -> List[Block]:
     polygons = find_polygons(img, 'CV: Blocks')
     
     blocks = polygons
@@ -62,7 +48,9 @@ def find_blocks(img) -> List[Block]:
     return blocks
 
 
-def find_shadow(img) -> Shadow:
+
+def process_shadow(img) -> Shadow:
+
     polygons = find_polygons(img, 'CV: Shadow')
 
     shadow = None
@@ -71,7 +59,11 @@ def find_shadow(img) -> Shadow:
 
 
 def find_polygons(img, window_name) -> List[Tuple[int, int]]:
-    img_mask = color_mask(img, window_name)
+    img_blur = blur(img)
+    
+    img_mask = color_mask(img_blur, window_name)
+
+    show_img_and_check_close('Color Mask ' + window_name, img_mask)
     
     img_edge = find_edges(img_mask, window_name)
 
@@ -96,7 +88,7 @@ def find_polygons(img, window_name) -> List[Tuple[int, int]]:
 
         num_corners = len(corners)
         x, y, _, _ = cv2.boundingRect(corners)
-        cv2.putText(img, str(num_corners), (x, y), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
+        cv2.putText(img, str(num_corners) + ' ' + str(round(cv2.contourArea(contour), 2)), (x, y), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
 
 
 
@@ -121,11 +113,21 @@ def find_polygons(img, window_name) -> List[Tuple[int, int]]:
 
         # label contour's center with relative coordinates
         shape = img.shape
-        cv2.putText(img, str(round(x_sum/shape[0], 2)) + ' ' + str(round(y_sum/shape[1], 2)), (x_sum, y_sum), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
+        # cv2.putText(img, str(round(x_sum/shape[0], 2)) + ' ' + str(round(y_sum/shape[1], 2)), (x_sum, y_sum), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
 
     show_img_and_check_close('Polygons', img)
 
     return centers
+
+
+def blur(img):
+    kernel_size = cv2.getTrackbarPos('Blur Kernel', 'CV: General') * 2 + 1
+    
+    blur_kernel = (kernel_size, kernel_size)
+
+    img_blurred = cv2.GaussianBlur(img, blur_kernel, 1)
+
+    return img_blurred
 
 
 def color_mask(img, window_name):

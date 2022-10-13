@@ -43,12 +43,15 @@ def main():
 
     robot.init()
 
-    # take picture
-    img = robot.scan()
+    img = robot.scan_blocks()
+
+    cv.create_trackbar_uis()
 
     # procecss picture & extract data
-    # while True:
-    blocks, shadow = cv.process_image(img)
+    while True:
+        img = robot.take_picture()
+        # blocks = cv.process_blocks(img)
+    
     b = blocks[0]
 
     robot.pick(b[0], b[1])
