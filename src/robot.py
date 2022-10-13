@@ -33,8 +33,7 @@ def init():
     L.info('Calibrating...')
     bot.arm.calibrate_auto()
 
-    L.info('Homing...')
-    bot.arm.move_to_home_pose()
+    bot.tool.update_tool()
 
     mtx, dist = bot.vision.get_camera_intrinsics()
 

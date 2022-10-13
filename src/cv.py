@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 from typing import List, Tuple
-from pyniryo import cv2
+from pyniryo import cv2, show_img_and_check_close
 from tangram import Block, Shadow
 
 
@@ -49,15 +49,15 @@ def process_image(img) -> Tuple[List[Block], Shadow]:
     img_blurred = cv2.GaussianBlur(img, blur_kernel, 1)
 
     blocks = find_blocks(img_blurred)
-    shadow = find_shadow(img_blurred)
+    # shadow = find_shadow(img_blurred)
 
-    return blocks, shadow
+    return blocks, None
 
 
 def find_blocks(img) -> List[Block]:
     polygons = find_polygons(img, 'CV: Blocks')
     
-    blocks = []
+    blocks = polygons
 
     return blocks
 
@@ -75,9 +75,11 @@ def find_polygons(img, window_name) -> List[Tuple[int, int]]:
     
     img_edge = find_edges(img_mask, window_name)
 
+    centers = []
+
     for contour in find_contours(img_edge):
 
-        if contour_too_small(contour):
+        if contour_too_small(contour, window_name):
             continue
 
         draw_contour(img, contour)
@@ -112,6 +114,8 @@ def find_polygons(img, window_name) -> List[Tuple[int, int]]:
         x_sum //= num_corners
         y_sum //= num_corners
 
+        centers.append((x_sum/img.shape[1], y_sum/img.shape[0]))
+
         cv2.circle(img, (x_sum, y_sum), 2, (0, 0, 0), -1)
         cv2.circle(img, (x_sum, y_sum), 1, (255, 0, 0), -1)
 
@@ -119,18 +123,18 @@ def find_polygons(img, window_name) -> List[Tuple[int, int]]:
         shape = img.shape
         cv2.putText(img, str(round(x_sum/shape[0], 2)) + ' ' + str(round(y_sum/shape[1], 2)), (x_sum, y_sum), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
 
+    show_img_and_check_close('Polygons', img)
 
-
-    return []
+    return centers
 
 
 def color_mask(img, window_name):
-    lower_h = cv2.getTrackbarPos('Lower H', window_name)
-    lower_s = cv2.getTrackbarPos('Lower S', window_name)
-    lower_v = cv2.getTrackbarPos('Lower V', window_name)
-    upper_h = cv2.getTrackbarPos('Upper H', window_name)
-    upper_s = cv2.getTrackbarPos('Upper S', window_name)
-    upper_v = cv2.getTrackbarPos('Upper V', window_name)
+    lower_h = cv2.getTrackbarPos('Mask Lower H', window_name)
+    lower_s = cv2.getTrackbarPos('Mask Lower S', window_name)
+    lower_v = cv2.getTrackbarPos('Mask Lower V', window_name)
+    upper_h = cv2.getTrackbarPos('Mask Upper H', window_name)
+    upper_s = cv2.getTrackbarPos('Mask Upper S', window_name)
+    upper_v = cv2.getTrackbarPos('Mask Upper V', window_name)
 
     lower = (lower_h, lower_s, lower_v)
     upper = (upper_h, upper_s, upper_v)
@@ -146,7 +150,7 @@ def find_edges(img, window_name):
 
     img_canny = cv2.Canny(img, threshold_1, threshold_2)
     
-    kernel_size = cv2.getTrackbarPos('D-Kernel', window_name)
+    kernel_size = cv2.getTrackbarPos('Dilate Kernel', window_name)
 
     kernel = np.ones((kernel_size, kernel_size))
     img_edges = cv2.dilate(img_canny, kernel, iterations=1)
@@ -163,7 +167,7 @@ def find_contours(img):
 def contour_too_small(contour, window_name):
     area = cv2.contourArea(contour)
 
-    min_contour_area = cv2.getTrackbarPos('Contour Area', window_name)
+    min_contour_area = cv2.getTrackbarPos('Min Contour Area', window_name)
 
     return area < min_contour_area
 
@@ -173,7 +177,7 @@ def find_corners(contour, window_name):
 
     perimeter = cv2.arcLength(contour, True)
 
-    corners = cv2.approxPolyDP(contour,  perimeter * 0.01 * accuracy, True)
+    corners = cv2.approxPolyDP(contour, perimeter * 0.01 * accuracy, True)
 
     return corners
 

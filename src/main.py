@@ -47,7 +47,14 @@ def main():
     img = robot.scan()
 
     # procecss picture & extract data
+    # while True:
     blocks, shadow = cv.process_image(img)
+    b = blocks[0]
+
+    robot.pick(b[0], b[1])
+
+    while True:
+        pass
 
     # find solution
     solver.solve(blocks, shadow)
