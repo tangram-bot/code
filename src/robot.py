@@ -28,7 +28,7 @@ def init():
     global dist
 
     L.info('Connecting...')
-    ip = getenv('NIRYO_IP') if getRunEnv() == "prod" else "127.0.0.1"
+    ip = getenv('NIRYO_IP') if get_run_env() == "prod" else "127.0.0.1"
     if(get_run_env() == "dev"):
         L.info("DEV runtime, mocking robot")
         return

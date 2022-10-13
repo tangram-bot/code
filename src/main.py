@@ -13,7 +13,7 @@ parser.add_argument('-e', '--env', default="dev")
 
 args = parser.parse_args()
 
-def getRunEnv():
+def get_run_env():
     return args.env
 
 logLevels={
@@ -21,7 +21,7 @@ logLevels={
     'stage': logging.INFO,
     'dev': logging.DEBUG,
 }
-logLevel = logLevels.get(getRunEnv(), logging.DEBUG)
+logLevel = logLevels.get(get_run_env(), logging.DEBUG)
 
 logging.basicConfig(format='%(asctime)s %(levelname)s\t [%(name)s] %(message)s', level=logLevel)
 
