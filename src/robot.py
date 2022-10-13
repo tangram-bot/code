@@ -68,7 +68,7 @@ def pick(x, y):
     if(bot == None):
         return
     
-    pose = bot.vision.get_target_pose_from_rel("workspace_1", 0.1, x, y, pi/2)
+    pose = bot.vision.get_target_pose_from_rel("labor", 0.1, x, y, pi/2)
     poseUp = pose
     poseUp.z = 0.5
 
@@ -85,7 +85,7 @@ def place(x, y, rotate):
     if(bot == None):
         return
     
-    pose = bot.vision.get_target_pose_from_rel("workspace_1", 0.1, x, y, rotate)
+    pose = bot.vision.get_target_pose_from_rel("labor", 0.1, x, y, rotate)
     poseUp = pose
     poseUp.z = 0.5
 
