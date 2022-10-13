@@ -7,7 +7,7 @@ from math import pi
 from os import getenv
 from PIL import Image
 
-from main import getRunEnv
+from main import get_run_env
 
 
 L = logging.getLogger('Robot')
@@ -29,7 +29,7 @@ def init():
 
     L.info('Connecting...')
     ip = getenv('NIRYO_IP') if getRunEnv() == "prod" else "127.0.0.1"
-    if(getRunEnv() == "dev"):
+    if(get_run_env() == "dev"):
         L.info("DEV runtime, mocking robot")
         return
     
@@ -92,18 +92,18 @@ def pick(x, y):
     x = min(x + 0.05, 1)
     y = max(y - 0.01, 0)
 
-    poseUp = bot.vision.get_target_pose_from_rel("blocks", 0.2, x, y, pi/2)
-    poseDown = bot.vision.get_target_pose_from_rel("blocks", 0, x, y, pi/2)
+    pose_up = bot.vision.get_target_pose_from_rel("blocks", 0.2, x, y, pi/2)
+    pose_down = bot.vision.get_target_pose_from_rel("blocks", 0, x, y, pi/2)
 
 
     # move to position
     bot.tool.open_gripper()
-    bot.arm.move_pose(poseUp)
-    bot.arm.move_linear_pose(poseDown)
+    bot.arm.move_pose(pose_up)
+    bot.arm.move_linear_pose(pose_down)
     # pick object
     
     bot.tool.close_gripper()
-    bot.arm.move_linear_pose(poseUp)
+    bot.arm.move_linear_pose(pose_up)
 
 
 def place(x, y, rotate):
@@ -116,15 +116,15 @@ def place(x, y, rotate):
     # but because the piece of paper is on the other side of the robot, is has to be corrected here
     rotate -= pi/2
     
-    poseUp = bot.vision.get_target_pose_from_rel("shadow", 0.2, x, y, rotate)
-    poseDown = bot.vision.get_target_pose_from_rel("shadow", 0, x, y, rotate)
+    pose_up = bot.vision.get_target_pose_from_rel("shadow", 0.2, x, y, rotate)
+    pose_down = bot.vision.get_target_pose_from_rel("shadow", 0, x, y, rotate)
 
     # move to position
-    bot.arm.move_pose(poseUp)
-    bot.arm.move_linear_pose(poseDown)
+    bot.arm.move_pose(pose_up)
+    bot.arm.move_linear_pose(pose_down)
     # place object
     bot.tool.open_gripper()
-    bot.arm.move_linear_pose(poseUp)
+    bot.arm.move_linear_pose(pose_up)
 
 
 def shutdown():
