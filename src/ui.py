@@ -9,7 +9,8 @@ from numpy import cos, pi, sin
 
 TRIANGLE_POINTS = [(0, 0), (40, 0), (0, 40)]
 RECT_POINTS = [(0, 0), (40, 0), (40, 40), (0, 40)]
-
+RECT_POINTS = [(0, 0), (40, 0), (40, 40), (0, 40)]
+PARALLELOGRAM_POINTS = [(0, 0), (40, 0), (60, 20), (20, 20)]
 
 def create_window(name):
     root = Tk()
@@ -32,6 +33,7 @@ def create_window(name):
 
     draw_triangle(35, 35, 0, c)
     draw_rect(60, 60, pi/4, c)
+    draw_parallelogram(100, 200, 0, c)
 
     # ttk.Button(frm, text="Quit", command=root.destroy).grid(column=1, row=0)
 
@@ -79,6 +81,10 @@ def draw_rect(x, y, rot, c):
 
 def draw_triangle(x, y, rot, c):
     draw_points(TRIANGLE_POINTS, x, y, rot, c)
+
+
+def draw_parallelogram(x, y, rot, c):
+    draw_points(PARALLELOGRAM_POINTS, x, y, rot, c)
 
 
 t = Thread(target=create_window, args=(1,))
