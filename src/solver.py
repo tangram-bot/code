@@ -8,4 +8,3 @@ L = logging.getLogger('Solver')
 
 def solve(blocks: List[Block], shadow: Shadow):
     print('solve()', blocks, shadow)
-    pass

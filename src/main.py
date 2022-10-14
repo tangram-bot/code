@@ -51,7 +51,7 @@ def main():
     cv.create_trackbar_uis()
 
     # procecss picture & extract data
-    blocks = cv.process_blocks(img)
+    blocks = cv.find_blocks(img)
     
     for b in blocks:
         robot.pick(b[0], b[1])
@@ -59,7 +59,6 @@ def main():
 
     while True:
         cv2.waitKey(1)
-        pass
 
     # find solution
     solver.solve(blocks, shadow)
