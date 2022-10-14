@@ -35,12 +35,12 @@ def init():
     global mtx
     global dist
 
-    L.info('Connecting...')
     ip = getenv('NIRYO_IP') if get_run_env() == "prod" else "127.0.0.1"
     if(get_run_env() == "dev"):
         L.info("DEV runtime, mocking robot")
         return
     
+    L.info('Connecting...')
     bot = NiryoRobot(ip)
 
     L.info('Calibrating...')
