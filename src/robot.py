@@ -28,12 +28,19 @@ WORKSPACE_RATIO = WORKSPACE_WIDTH / WORKSPACE_HEIGHT
 bot: NiryoRobot = None
 mtx = None
 dist = None
+capture = None
+
+
+def get_usb_camera_intrinsics():
+    #TODO
+    return None, None
 
 
 def init():
     global bot
     global mtx
     global dist
+    global capture
 
     L.info('Connecting...')
     ip = getenv('NIRYO_IP') if get_run_env() == "prod" else "127.0.0.1"
@@ -48,7 +55,13 @@ def init():
 
     bot.tool.update_tool()
 
-    mtx, dist = bot.vision.get_camera_intrinsics()
+    capture = cv2.VideoCapture(0)
+    if capture.isOpened():
+        mtx, dist = get_usb_camera_intrinsics()
+        L.info("Using connected USB camera")
+    else:
+        mtx, dist = bot.vision.get_camera_intrinsics()
+        L.info("Using Robot Vision Set")
 
 
 def mock_image(folder):
@@ -93,9 +106,11 @@ def scan_shadow():
 
 def take_picture():
     L.info("Taking picture")
-    img_comp = bot.vision.get_img_compressed()
-    
-    img_dist = uncompress_image(img_comp)
+    if capture.isOpened():
+        _, img_dist = capture.read()
+    else:
+        img_comp = bot.vision.get_img_compressed() 
+        img_dist = uncompress_image(img_comp)
     
     img = undistort_image(img_dist, mtx, dist)
 
