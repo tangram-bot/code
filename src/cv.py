@@ -7,95 +7,58 @@ from tangram import Block, Shadow
 
 L = logging.getLogger('CV')
 
-def open_input_window(window_title, mask_lower_h, mask_lower_s, mask_lower_v, mask_upper_h, mask_upper_s, mask_upper_v, canny1, canny2, dilate_kernel, min_contour_area, corner_accuracy):
-    cv2.namedWindow(window_title)
-    cv2.createTrackbar('Mask Lower H',      window_title, mask_lower_h,     255, lambda x: x)
-    cv2.createTrackbar('Mask Lower S',      window_title, mask_lower_s,     255, lambda x: x)
-    cv2.createTrackbar('Mask Lower V',      window_title, mask_lower_v,     255, lambda x: x)
-    cv2.createTrackbar('Mask Upper H',      window_title, mask_upper_h,     255, lambda x: x)
-    cv2.createTrackbar('Mask Upper S',      window_title, mask_upper_s,     255, lambda x: x)
-    cv2.createTrackbar('Mask Upper V',      window_title, mask_upper_v,     255, lambda x: x)
-    cv2.createTrackbar('Canny 1',           window_title, canny1,           255, lambda x: x)
-    cv2.createTrackbar('Canny 2',           window_title, canny2,           255, lambda x: x)
-    cv2.createTrackbar('Dilate Kernel',     window_title, dilate_kernel,    10, lambda x: x)
-    cv2.createTrackbar('Min Contour Area',  window_title, min_contour_area, 500, lambda x: x)
-    cv2.createTrackbar('Corner Accuracy',   window_title, corner_accuracy,  1000, lambda x: x)
+NW_BLOCKS = 'CV: Blocks'
+NW_SHADOW = 'CV: Shadow'
 
 
 def create_trackbar_uis():
+    cv2.namedWindow('CV: Blocks')
+    cv2.createTrackbar('Blur Kernel',       NW_BLOCKS,  1,      10,     lambda x: x)
+    cv2.createTrackbar('Mask Lower H',      NW_BLOCKS,  0,      255,    lambda x: x)
+    cv2.createTrackbar('Mask Lower S',      NW_BLOCKS,  0,      255,    lambda x: x)
+    cv2.createTrackbar('Mask Lower V',      NW_BLOCKS,  30,     255,    lambda x: x)
+    cv2.createTrackbar('Mask Upper H',      NW_BLOCKS,  115,    255,    lambda x: x)
+    cv2.createTrackbar('Mask Upper S',      NW_BLOCKS,  255,    255,    lambda x: x)
+    cv2.createTrackbar('Mask Upper V',      NW_BLOCKS,  255,    255,    lambda x: x)
+    cv2.createTrackbar('Canny 1',           NW_BLOCKS,  0,      255,    lambda x: x)
+    cv2.createTrackbar('Canny 2',           NW_BLOCKS,  0,      255,    lambda x: x)
+    cv2.createTrackbar('Dilate Kernel',     NW_BLOCKS,  1,      10,     lambda x: x)
+    cv2.createTrackbar('Min Contour Area',  NW_BLOCKS,  200,    500,    lambda x: x)
+    cv2.createTrackbar('Corner Accuracy',   NW_BLOCKS,  5,      1000,   lambda x: x)
 
-    cv2.namedWindow('CV: General')
-    cv2.createTrackbar('Blur Kernel',       'CV: General', 1,   10, lambda x: x)
-
-    open_input_window(
-        "CV: Blocks",
-        mask_lower_h     = 0, 
-        mask_lower_s     = 0, 
-        mask_lower_v     = 30, 
-        mask_upper_h     = 115, 
-        mask_upper_s     = 255, 
-        mask_upper_v     = 255, 
-        canny1           = 0, 
-        canny2           = 0, 
-        dilate_kernel    = 1, 
-        min_contour_area = 200, 
-        corner_accuracy  = 5
-    )
-
-    open_input_window(
-        "CV: Shadow",
-        mask_lower_h     = 0, 
-        mask_lower_s     = 0, 
-        mask_lower_v     = 47, 
-        mask_upper_h     = 57, 
-        mask_upper_s     = 255, 
-        mask_upper_v     = 255, 
-        canny1           = 0, 
-        canny2           = 0, 
-        dilate_kernel    = 1, 
-        min_contour_area = 20, 
-        corner_accuracy  = 7
-    )
+    cv2.namedWindow('CV: Shadow')
+    cv2.createTrackbar('Blur Kernel',       NW_SHADOW,  2,      10,     lambda x: x)
+    cv2.createTrackbar('Canny 1',           NW_SHADOW,  0,      255,    lambda x: x)
+    cv2.createTrackbar('Canny 2',           NW_SHADOW,  0,      255,    lambda x: x)
+    cv2.createTrackbar('Dilate Kernel',     NW_SHADOW,  1,      10,     lambda x: x)
+    cv2.createTrackbar('Min Contour Area',  NW_SHADOW,  200,    500,    lambda x: x)
+    cv2.createTrackbar('Corner Accuracy',   NW_SHADOW,  5,      1000,   lambda x: x)
 
 
-def process_blocks(img) -> List[Block]:
-
-    polygons = find_polygons(img, 'CV: Blocks')
+def find_blocks(img) -> List[Block]:
+    # Blur image to reduce noise
+    img_blur = blur(img, NW_BLOCKS)
     
-    blocks = polygons
+    # Apply color mask to find colored areas
+    img_mask = color_mask(img_blur, NW_BLOCKS)
 
-    return blocks
-
-
-
-def process_shadow(img) -> Shadow:
-
-    polygons = find_polygons(img, 'CV: Shadow')
-
-    shadow = None
-
-    return shadow
-
-
-def find_polygons(img, window_name) -> List[Tuple[int, int]]:
-    img_blur = blur(img)
+    show_img_and_check_close('Color Mask', img_mask)
     
-    img_mask = color_mask(img_blur, window_name)
-
-    show_img_and_check_close('Color Mask ' + window_name, img_mask)
-    
-    img_edge = find_edges(img_mask, window_name)
+    # Apply edge detection
+    img_edge = find_edges(img_mask, NW_BLOCKS)
 
     centers = []
 
     for contour in find_contours(img_edge):
 
-        if contour_too_small(contour, window_name):
+        # Skip if contour is too small
+        if contour_too_small(contour, NW_BLOCKS):
             continue
 
         draw_contour(img, contour)
 
-        corners = find_corners(contour, window_name)
+        # Find corners of the contour
+        corners = find_corners(contour, NW_BLOCKS)
 
         draw_corners(img, corners)
         
@@ -134,13 +97,54 @@ def find_polygons(img, window_name) -> List[Tuple[int, int]]:
         shape = img.shape
         # cv2.putText(img, str(round(x_sum/shape[0], 2)) + ' ' + str(round(y_sum/shape[1], 2)), (x_sum, y_sum), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
 
-    show_img_and_check_close('Polygons', img)
+    show_img_and_check_close('Blocks', img)
 
     return centers
 
 
-def blur(img):
-    kernel_size = cv2.getTrackbarPos('Blur Kernel', 'CV: General') * 2 + 1
+
+def find_shadow(img) -> Shadow:
+    # Blur image to reduce noise
+    img_blur = blur(img, NW_SHADOW)
+    
+    # Apply edge detection
+    img_edge = find_edges(img_blur, NW_SHADOW)
+
+    for contour in find_contours(img_edge):
+
+        # Skip if contour is too small
+        if contour_too_small(contour, NW_SHADOW):
+            continue
+
+        draw_contour(img, contour)
+
+        # Find corners of the contour
+        corners = find_corners(contour, NW_SHADOW)
+
+        draw_corners(img, corners)
+        
+
+        #======================================#
+        # label contour with number of corners #
+        #======================================#
+
+        num_corners = len(corners)
+        x, y, _, _ = cv2.boundingRect(corners)
+        cv2.putText(img, str(num_corners) + ' ' + str(round(cv2.contourArea(contour), 2)), (x, y-5), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
+
+    show_img_and_check_close('Shadow', img)
+
+    return None
+
+
+
+
+#=====================#
+# CV HELPER FUNCTIONS #
+#=====================#
+
+def blur(img, window_name):
+    kernel_size = cv2.getTrackbarPos('Blur Kernel', window_name) * 2 + 1
     
     blur_kernel = (kernel_size, kernel_size)
 
