@@ -17,6 +17,9 @@ SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
 
 WORKSPACE_WIDTH = 297
 WORKSPACE_HEIGHT = 210
+PICK_AND_PLACE_HEIGHT = 0.0015
+MOVEMENT_HEIGHT = 0.2
+GRIPPER_BASE_ROTATION=pi/2
 WORKSPACE_RATIO = WORKSPACE_WIDTH / WORKSPACE_HEIGHT
 
 MOCK_IMG_FILES = ["test-01.png", "test-02.png", "test-03.png"]
@@ -116,8 +119,8 @@ def pick(x, y):
     x = min(x + 0.05, 1)
     y = max(y - 0.01, 0)
 
-    pose_up = bot.vision.get_target_pose_from_rel("blocks", 0.2, x, y, pi/2)
-    pose_down = bot.vision.get_target_pose_from_rel("blocks", 0, x, y, pi/2)
+    pose_up = bot.vision.get_target_pose_from_rel("blocks", MOVEMENT_HEIGHT, x, y, GRIPPER_BASE_ROTATION)
+    pose_down = bot.vision.get_target_pose_from_rel("blocks", PICK_AND_PLACE_HEIGHT, x, y, GRIPPER_BASE_ROTATION)
 
 
     # move to position
@@ -138,10 +141,10 @@ def place(x, y, rotate):
 
     # rotation of 0 should be the same direction as the source rotation
     # but because the piece of paper is on the other side of the robot, is has to be corrected here
-    rotate -= pi/2
+    rotate -= GRIPPER_BASE_ROTATION
     
-    pose_up = bot.vision.get_target_pose_from_rel("shadow", 0.2, x, y, rotate)
-    pose_down = bot.vision.get_target_pose_from_rel("shadow", 0, x, y, rotate)
+    pose_up = bot.vision.get_target_pose_from_rel("shadow", MOVEMENT_HEIGHT, x, y, rotate)
+    pose_down = bot.vision.get_target_pose_from_rel("shadow", PICK_AND_PLACE_HEIGHT, x, y, rotate)
 
     # move to position
     bot.arm.move_pose(pose_up)
