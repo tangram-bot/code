@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 import numpy as np
 from pyniryo2 import NiryoRobot
@@ -22,7 +23,7 @@ MOVEMENT_HEIGHT = 0.2
 GRIPPER_BASE_ROTATION=pi/2
 WORKSPACE_RATIO = WORKSPACE_WIDTH / WORKSPACE_HEIGHT
 
-MOCK_IMG_FILES = ["test-01.png", "test-02.png", "test-03.png"]
+# ["test-01.png", "test-02.png", "test-03.png"]
 
 bot: NiryoRobot = None
 mtx = None
@@ -50,14 +51,13 @@ def init():
     mtx, dist = bot.vision.get_camera_intrinsics()
 
 
-# TODO: Separate Mock-Bilder für Blocks und Shadow
-def mock_image():
-    img_file = random.choice(MOCK_IMG_FILES)
-    
-    img = Image.open(f"img/{img_file}")
-    
+def mock_image(folder):
+    path = f"img/{folder}/"
+    files = os.listdir(path)
+    img_file = random.choice(files)
+
+    img = Image.open(f"{path}{img_file}")    
     img = np.asarray(img)
-    
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     return img
@@ -65,7 +65,7 @@ def mock_image():
 
 def scan_blocks():
     if(bot == None): 
-        return mock_image()
+        return mock_image("blocks")
 
     bot.arm.calibrate_auto()
 
@@ -80,7 +80,7 @@ def scan_blocks():
 
 def scan_shadow():
     if(bot == None):
-        return mock_image()
+        return mock_image("shadow")
 
     bot.arm.calibrate_auto()
 
