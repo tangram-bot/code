@@ -23,8 +23,6 @@ MOVEMENT_HEIGHT = 0.2
 GRIPPER_BASE_ROTATION=pi/2
 WORKSPACE_RATIO = WORKSPACE_WIDTH / WORKSPACE_HEIGHT
 
-# ["test-01.png", "test-02.png", "test-03.png"]
-
 bot: NiryoRobot = None
 mtx = None
 dist = None
