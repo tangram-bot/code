@@ -4,6 +4,12 @@ from threading import Thread
 from tkinter import *
 from tkinter import ttk
 
+from numpy import cos, pi, sin
+
+
+TRIANGLE_POINTS = [(0, 0), (40, 0), (0, 40)]
+RECT_POINTS = [(0, 0), (40, 0), (40, 40), (0, 40)]
+
 
 def create_window(name):
     root = Tk()
@@ -17,14 +23,62 @@ def create_window(name):
     
     # ttk.Label(frm, text="Hello World!").grid(column=0, row=0)
 
-    c = Canvas(master=frm)
+    c = Canvas(master=frm, bg="white")
+    c.pack(anchor=CENTER, expand=True)
 
-    c.create_polygon(((10, 10), (10, 20), (30, 30), (20, 10)), outline='#000', fill='#f00')
+    # c.create_polygon(((10, 10), (10, 40), (40, 40)),           outline='#000', fill='#f00')
+    # c.create_polygon(((10, 10), (10, 40), (40, 40), (40, 10)), outline='#000', fill='#f00')
+    # c.create_polygon(((10, 10), (40, 10), (50, 30), (20, 30)), outline='#000', fill='#f00')
 
+    draw_triangle(35, 35, 0, c)
+    draw_rect(60, 60, pi/4, c)
 
     # ttk.Button(frm, text="Quit", command=root.destroy).grid(column=1, row=0)
 
     root.mainloop()
+
+
+def center_offset(points):
+    sum_x = 0
+    sum_y = 0
+
+    for p in points:
+        sum_x += p[0]
+        sum_y += p[1]
+    
+    return sum_x / len(points), sum_y / len(points)
+
+
+def draw_points(input_points, x, y, rot, c):
+
+    offset_x, offset_y = center_offset(input_points)
+    points_around_origin = []
+    rotated_points = []
+    points = []
+
+    # move points around origin
+    for p in input_points:
+        points_around_origin.append((p[0] - offset_x, p[1] - offset_y))
+
+    #rotate points around origin
+    for p in points_around_origin:
+        x2 = p[0] * cos(rot) - p[1] * sin(rot)
+        y2 = p[0] * sin(rot) + p[1] * cos(rot)
+        rotated_points.append((x2, y2))
+
+    # move points to x and y
+    for p in rotated_points:
+        points.append((p[0] + x, p[1] + y))
+
+    c.create_polygon(points,           outline='#000', fill='#f00')
+
+
+def draw_rect(x, y, rot, c):
+    draw_points(RECT_POINTS, x, y, rot, c)
+
+
+def draw_triangle(x, y, rot, c):
+    draw_points(TRIANGLE_POINTS, x, y, rot, c)
 
 
 t = Thread(target=create_window, args=(1,))
