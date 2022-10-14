@@ -46,6 +46,7 @@ def main():
     robot.init()
 
     img = robot.scan_blocks()
+    img2 = robot.scan_shadow()
 
     cv.create_trackbar_uis()
 

@@ -11,6 +11,7 @@ TRIANGLE_POINTS = [(0, 0), (40, 0), (0, 40)]
 RECT_POINTS = [(0, 0), (40, 0), (40, 40), (0, 40)]
 RECT_POINTS = [(0, 0), (40, 0), (40, 40), (0, 40)]
 PARALLELOGRAM_POINTS = [(0, 0), (40, 0), (60, 20), (20, 20)]
+CENTER_POINT_RADIUS = 2
 
 def create_window(name):
     root = Tk()
@@ -26,10 +27,6 @@ def create_window(name):
 
     c = Canvas(master=frm, bg="white")
     c.pack(anchor=CENTER, expand=True)
-
-    # c.create_polygon(((10, 10), (10, 40), (40, 40)),           outline='#000', fill='#f00')
-    # c.create_polygon(((10, 10), (10, 40), (40, 40), (40, 10)), outline='#000', fill='#f00')
-    # c.create_polygon(((10, 10), (40, 10), (50, 30), (20, 30)), outline='#000', fill='#f00')
 
     draw_triangle(35, 35, 0, c)
     draw_rect(60, 60, pi/4, c)
@@ -72,7 +69,13 @@ def draw_points(input_points, x, y, rot, c):
     for p in rotated_points:
         points.append((p[0] + x, p[1] + y))
 
+    print(x, y)
     c.create_polygon(points,           outline='#000', fill='#f00')
+    c.create_oval(
+        x - CENTER_POINT_RADIUS, 
+        y - CENTER_POINT_RADIUS, 
+        x + CENTER_POINT_RADIUS, 
+        y + CENTER_POINT_RADIUS, outline="#000", fill="#00f")
 
 
 def draw_rect(x, y, rot, c):
