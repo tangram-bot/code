@@ -59,7 +59,6 @@ def main():
 
     while True:
         cv2.waitKey(1)
-        pass
 
     # find solution
     solver.solve(blocks, shadow)
