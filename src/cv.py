@@ -1,8 +1,9 @@
 import logging
+import math
 import numpy as np
 from typing import List, Tuple
 from pyniryo import cv2, show_img_and_check_close
-from tangram import Block, Shadow
+from tangram import Block, Shadow, AREA_FACTOR, SHAPES
 
 
 L = logging.getLogger('CV')
@@ -35,93 +36,364 @@ def create_trackbar_uis():
     cv2.createTrackbar('Corner Accuracy',   NW_SHADOW,  5,      1000,   lambda x: x)
 
 
+def rot(vertices, center, angle):
+    rads = math.radians(angle)
+    cos = math.cos(rads)
+    sin = math.sin(rads)
+
+    new_vertices: list[float] = []
+
+    for vertex in vertices:
+        old_x, old_y = np.subtract(vertex, center)
+
+        new_x = old_x * cos - old_y * sin + center[0]
+        new_y = old_x * sin + old_y * cos + center[1]
+
+        new_vertices.append([new_x, new_y])
+
+    return new_vertices
+
+
 def find_blocks(img) -> List[Block]:
-    # Blur image to reduce noise
-    img_blur = blur(img, NW_BLOCKS)
-    
-    # Apply color mask to find colored areas
-    img_mask = color_mask(img_blur, NW_BLOCKS)
+    features = __find_block_features(img)
 
-    show_img_and_check_close('Color Mask', img_mask)
-    
-    # Apply edge detection
-    img_edge = find_edges(img_mask, NW_BLOCKS)
+    L.debug('Found Features:')
+    L.debug(features)
 
-    centers = []
+    blocks = __process_block_features(features, img)
 
-    for contour in find_contours(img_edge):
+    show_img_and_check_close('After Processing', img)
 
-        # Skip if contour is too small
-        if contour_too_small(contour, NW_BLOCKS):
-            continue
+    for block in blocks:
+        x = block.vertices.copy()
 
-        draw_contour(img, contour)
+        # Skalieren
+        for i in range(len(x)):
+            x[i] = (x[i][0] * 50, x[i][1] * 50)
 
-        # Find corners of the contour
-        corners = find_corners(contour, NW_BLOCKS)
-
-        draw_corners(img, corners)
-        
-
-
-        #======================================#
-        # label contour with number of corners #
-        #======================================#
-
-        num_corners = len(corners)
-        x, y, _, _ = cv2.boundingRect(corners)
-        cv2.putText(img, str(num_corners) + ' ' + str(round(cv2.contourArea(contour), 2)), (x, y), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
-
-
-
-        #=======================#
-        # mark contour's center #
-        #=======================#
-
+        # Center
         x_sum = 0
         y_sum = 0
+        for xx in x:
+            x_sum += xx[0]
+            y_sum += xx[1]
+        x_sum //= len(x)
+        y_sum //= len(x)
+        center = (x_sum, y_sum)
         
-        for corner in corners:
-            x_sum += corner[0][0]
-            y_sum += corner[0][1]
+        # Verschieben
+        for i in range(len(x)):
+            x[i] = (x[i][0] + block.position[0] - x_sum, x[i][1] + block.position[1] - y_sum)
 
-        x_sum //= num_corners
-        y_sum //= num_corners
+        # Rotate shape
+        x = rot(x, block.position, block.rotation)
 
-        centers.append((x_sum/img.shape[1], y_sum/img.shape[0]))
+        # Convert vertices' coordinates to integers
+        for i in range(len(x)):
+            x[i] = (round(x[i][0]), round(x[i][1]))
+        
+        # Draw shape after rotating
+        cv2.fillPoly(img, pts=np.array([x]), color=(255, 0, 255))
+        # Draw shape's center
+        cv2.circle(img, block.position, 5, (100, 100, 100), -1)
 
-        cv2.circle(img, (x_sum, y_sum), 2, (0, 0, 0), -1)
-        cv2.circle(img, (x_sum, y_sum), 1, (255, 0, 0), -1)
 
-        # label contour's center with relative coordinates
-        shape = img.shape
-        # cv2.putText(img, str(round(x_sum/shape[0], 2)) + ' ' + str(round(y_sum/shape[1], 2)), (x_sum, y_sum), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
+    show_img_and_check_close('TEST', img)
 
-    show_img_and_check_close('Blocks', img)
-
-    return centers
-
+    return blocks
 
 
 def find_shadow(img) -> Shadow:
+    shapes = __find_shadow_shapes(img)
+
+    return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BlockFeature:
+    vertices: List[Tuple[float, float]]
+    center: Tuple[float, float]
+    area: float
+
+
+    def __init__(self, vertices: List[Tuple[float, float]], center: Tuple[float, float], area: float):
+        self.vertices = vertices
+        self.center = center
+        self.area = area
+
+
+    def get_vertex_count(self):
+        return len(self.vertices)
+
+
+    def get_scaled_area(self):
+        TOLERANCE = 0.2
+
+        area = self.area * AREA_FACTOR
+        area = round(area, 1)
+
+        if abs(0.5 - area) <= TOLERANCE:
+            area = 0.5
+
+        elif abs(1.0 - area) <= TOLERANCE:
+            area = 1.0
+
+        elif abs(2.0 - area) <= TOLERANCE:
+            area = 2.0
+
+        return area
+
+
+    def get_interior_angles(self):
+        TOLERANCE = 20.0
+
+        angles: List[float] = []
+
+        for i in range(len(self.vertices)):
+            v = self.vertices[i].ravel()
+            a = self.vertices[(i+1)%len(self.vertices)].ravel()
+            b = self.vertices[(i-1)%len(self.vertices)].ravel()
+
+            a = a - v
+            b = b - v
+
+            angle = math.acos( np.dot(a, b) / ( abs(np.linalg.norm(a)) * abs(np.linalg.norm(b)) ) )
+            angle = math.degrees(angle)
+
+            if abs(45.0 - angle) <= TOLERANCE:
+                angle = 45.0
+            elif abs(90.0 - angle) <= TOLERANCE:
+                angle = 90.0
+            elif abs(135.0 - angle) <= TOLERANCE:
+                angle = 135.0
+
+            angles.append(angle)
+
+        return angles
+
+
+    def __str__(self):
+        return 'BlockFeature(vertices=%s, center=%s, area=%f)' % (self.vertices, self.center, self.area)
+
+
+    def __repr__(self):
+        return self.__str__()
+
+
+def __find_block_features(img) -> List[BlockFeature]:
     # Blur image to reduce noise
-    img_blur = blur(img, NW_SHADOW)
+    img_blur = __blur(img, NW_BLOCKS)
+    
+    # Apply color mask to find colored areas
+    img_mask = __color_mask(img_blur, NW_BLOCKS)
     
     # Apply edge detection
-    img_edge = find_edges(img_blur, NW_SHADOW)
+    img_edge = __find_edges(img_mask, NW_BLOCKS)
 
-    for contour in find_contours(img_edge):
+    features: List[BlockFeature] = []
+
+    for contour in __find_contours(img_edge):
 
         # Skip if contour is too small
-        if contour_too_small(contour, NW_SHADOW):
+        if __contour_too_small(contour, NW_BLOCKS):
             continue
 
-        draw_contour(img, contour)
+        # Find corners of the contour
+        corners = __find_corners(contour, NW_BLOCKS)
+
+        # Get the block's center
+        center = __get_center(corners)
+
+        features.append(BlockFeature(corners, center, cv2.contourArea(contour)))
+
+
+        __draw_contour(img, contour)
+        __draw_corners(img, corners)
+        __draw_center(img, center)
+        __draw_contour_info(img, contour, corners)
+
+
+    show_img_and_check_close('Blocks', img)
+    show_img_and_check_close('Blocks: Color Mask', img_mask)
+
+    return features
+
+
+def __vector_angle(a, b) -> float:
+    dot_prod = np.dot(a, b)
+    len_prod = abs(np.linalg.norm(a)) * abs(np.linalg.norm(b))
+
+    angle = math.acos( dot_prod / len_prod )
+    angle = math.degrees(angle)
+
+    return angle
+
+
+
+
+def __process_block_features(features: List[BlockFeature], img) -> List[Block]:
+    blocks: List[Block] = []
+
+    for feature in features:
+        vertices = feature.vertices
+        vertex_count = feature.get_vertex_count()
+        area = feature.get_scaled_area()
+        int_angles = feature.get_interior_angles()
+
+        if vertex_count == 4 and area == 1.0:
+
+            if max(int_angles) == 135.0:
+
+                #===============#
+                # PARALLELOGRAM #
+                #===============#
+
+                ref_vertex = vertices[int_angles.index(45)]
+                
+                angle = __vector_angle(ref_vertex - feature.center, (-1, -2)) % 180
+
+                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+                print('PARALLELOGRAM: center=%s angle=%f°' % (feature.center, angle))
+
+                blocks.append(Block(SHAPES['PA'], feature.center, angle))
+
+
+            else:
+
+                #========#
+                # SQUARE #
+                #========#
+
+                upper_vertex = None
+                for v in vertices:
+                    if upper_vertex is None:
+                        upper_vertex = v
+                    elif v[0][1] < upper_vertex[0][1]:
+                        upper_vertex = v
+
+                ref_vertex = upper_vertex
+                
+                angle = __vector_angle(ref_vertex - feature.center, (-1, -1)) % 90
+                
+                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+                print('SQUARE: center=%s angle=%f°' % (feature.center, angle))
+
+                blocks.append(Block(SHAPES['SQ'], feature.center, angle))
+
+
+        elif vertex_count == 3:
+            if area == 0.5:
+
+                #================#
+                # SMALL TRIANGLE #
+                #================#
+
+                ref_vertex = vertices[int_angles.index(90)]
+                
+                angle = __vector_angle(ref_vertex - feature.center, (-1, -1))
+
+                # Fix rotation > 180°
+                cross = np.cross((ref_vertex-feature.center), (-1, -1))
+                if cross > 0:
+                    angle = 360 - angle
+                
+                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+                print('SMALL TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
+
+                blocks.append(Block(SHAPES['ST'], feature.center, angle))
+
+            elif area == 1.0:
+
+                #=================#
+                # MEDIUM TRIANGLE #
+                #=================#
+
+                ref_vertex = vertices[int_angles.index(90)]
+                
+                angle = __vector_angle(ref_vertex - feature.center, (0, 1))
+
+                # Fix rotation > 180°
+                cross = np.cross((ref_vertex-feature.center), (0, 1))
+                if cross > 0: # TODO: check if needs to be < 0
+                    angle = 360 - angle
+                
+                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+                print('MEDIUM TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
+                
+                blocks.append(Block(SHAPES['MT'], feature.center, angle))
+
+            elif area == 2.0:
+
+                #================#
+                # LARGE TRIANGLE #
+                #================#
+
+                ref_vertex = vertices[int_angles.index(90)]
+                
+                angle = __vector_angle(ref_vertex - feature.center, (-1, -1))
+                
+                # Fix rotation > 180°
+                cross = np.cross((ref_vertex-feature.center), (-1, -1))
+                if cross > 0:
+                    angle = 360 - angle
+
+                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+                print('LARGE TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
+                
+                blocks.append(Block(SHAPES['LT'], feature.center, angle))
+
+        else:
+            print('Invalid Feature:', feature)
+        
+    return blocks
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def __find_shadow_shapes(img):
+    # Blur image to reduce noise
+    img_blur = __blur(img, NW_SHADOW)
+    
+    # Apply edge detection
+    img_edge = __find_edges(img_blur, NW_SHADOW)
+
+    for contour in __find_contours(img_edge):
+
+        # Skip if contour is too small
+        if __contour_too_small(contour, NW_SHADOW):
+            continue
+
+        __draw_contour(img, contour)
 
         # Find corners of the contour
-        corners = find_corners(contour, NW_SHADOW)
+        corners = __find_corners(contour, NW_SHADOW)
 
-        draw_corners(img, corners)
+        __draw_corners(img, corners)
         
 
         #======================================#
@@ -134,8 +406,6 @@ def find_shadow(img) -> Shadow:
 
     show_img_and_check_close('Shadow', img)
 
-    return None
-
 
 
 
@@ -143,7 +413,7 @@ def find_shadow(img) -> Shadow:
 # CV HELPER FUNCTIONS #
 #=====================#
 
-def blur(img, window_name):
+def __blur(img, window_name):
     kernel_size = cv2.getTrackbarPos('Blur Kernel', window_name) * 2 + 1
     
     blur_kernel = (kernel_size, kernel_size)
@@ -153,7 +423,7 @@ def blur(img, window_name):
     return img_blurred
 
 
-def color_mask(img, window_name):
+def __color_mask(img, window_name):
     lower_h = cv2.getTrackbarPos('Mask Lower H', window_name)
     lower_s = cv2.getTrackbarPos('Mask Lower S', window_name)
     lower_v = cv2.getTrackbarPos('Mask Lower V', window_name)
@@ -169,7 +439,7 @@ def color_mask(img, window_name):
     return img_masked
 
 
-def find_edges(img, window_name):
+def __find_edges(img, window_name):
     threshold_1 = cv2.getTrackbarPos('Canny 1', window_name)
     threshold_2 = cv2.getTrackbarPos('Canny 2', window_name)
 
@@ -183,13 +453,13 @@ def find_edges(img, window_name):
     return img_edges
 
 
-def find_contours(img):
+def __find_contours(img):
     contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     return contours
 
 
-def contour_too_small(contour, window_name):
+def __contour_too_small(contour, window_name):
     area = cv2.contourArea(contour)
 
     min_contour_area = cv2.getTrackbarPos('Min Contour Area', window_name)
@@ -197,7 +467,7 @@ def contour_too_small(contour, window_name):
     return area < min_contour_area
 
 
-def find_corners(contour, window_name):
+def __find_corners(contour, window_name):
     accuracy = cv2.getTrackbarPos('Corner Accuracy', window_name)
 
     perimeter = cv2.arcLength(contour, True)
@@ -207,14 +477,46 @@ def find_corners(contour, window_name):
     return corners
 
 
+def __get_center(corners):
+    x_sum = 0
+    y_sum = 0
+    
+    for corner in corners:
+        x_sum += corner[0][0]
+        y_sum += corner[0][1]
 
-def draw_contour(img, contour):
+    num_corners = len(corners)
+
+    x_sum //= num_corners
+    y_sum //= num_corners
+
+    return (x_sum, y_sum)
+
+
+
+#=======================#
+# DRAW HELPER FUNCTIONS #
+#=======================#
+
+def __draw_contour(img, contour):
     cv2.drawContours(img, contour, -1, (0, 0, 0), 2)
     cv2.drawContours(img, contour, -1, (0, 0, 255), 1)
 
 
-def draw_corners(img, corners):
+def __draw_corners(img, corners):
     for corner in corners:
         cv2.circle(img, corner[0], 2, (0, 0, 0), -1)
         cv2.circle(img, corner[0], 1, (0, 255, 0), -1)
 
+
+def __draw_center(img, center):
+    cv2.circle(img, center, 2, (0, 0, 0), -1)
+    cv2.circle(img, center, 1, (255, 0, 0), -1)
+
+
+def __draw_contour_info(img, contour, corners):
+    num_corners = len(corners)
+
+    x, y, _, _ = cv2.boundingRect(corners)
+
+    cv2.putText(img, str(num_corners) + ' ' + str(round(cv2.contourArea(contour), 2)), (x, y-10), cv2.FONT_HERSHEY_COMPLEX, 0.6, (0, 0, 0), 1)
