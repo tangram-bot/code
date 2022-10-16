@@ -195,7 +195,6 @@ def __find_block_features(img) -> List[BlockFeature]:
         __draw_contour_info(img, contour, corners)
 
 
-    show_img_and_check_close('Blocks', img)
     show_img_and_check_close('Blocks: Color Mask', img_mask)
 
     return features
@@ -252,14 +251,11 @@ def __process_parallelogram(feature: BlockFeature, img) -> Block:
 
 
 def __process_square(feature: BlockFeature, img) -> Block:
-    upper_vertex = None
-    for v in feature.vertices:
-        if upper_vertex is None:
-            upper_vertex = v
-        elif v[0][1] < upper_vertex[0][1]:
-            upper_vertex = v
+    ref_vertex = feature.vertices[0]
 
-    ref_vertex = upper_vertex
+    for v in feature.vertices:
+        if v[0][1] < ref_vertex[0][1]:
+            ref_vertex = v
     
     angle = vector_angle(ref_vertex - feature.center, (-1, -1)) % 90
     
