@@ -3,7 +3,8 @@ import math
 import numpy as np
 from typing import List, Tuple
 from pyniryo import cv2, show_img_and_check_close
-from tangram import Block, Shadow, AREA_FACTOR, SHAPES
+from helper import rotate_around_center, vector_angle
+from tangram import LENGTH_FACTOR, Block, Shadow, AREA_FACTOR, SHAPES
 
 
 L = logging.getLogger('CV')
@@ -36,22 +37,9 @@ def create_trackbar_uis():
     cv2.createTrackbar('Corner Accuracy',   NW_SHADOW,  5,      1000,   lambda x: x)
 
 
-def rot(vertices, center, angle):
-    rads = math.radians(angle)
-    cos = math.cos(rads)
-    sin = math.sin(rads)
 
-    new_vertices: list[float] = []
 
-    for vertex in vertices:
-        old_x, old_y = np.subtract(vertex, center)
 
-        new_x = old_x * cos - old_y * sin + center[0]
-        new_y = old_x * sin + old_y * cos + center[1]
-
-        new_vertices.append([new_x, new_y])
-
-    return new_vertices
 
 
 def find_blocks(img) -> List[Block]:
@@ -69,7 +57,7 @@ def find_blocks(img) -> List[Block]:
 
         # Skalieren
         for i in range(len(x)):
-            x[i] = (x[i][0] * 50, x[i][1] * 50)
+            x[i] = (x[i][0] * LENGTH_FACTOR, x[i][1] * LENGTH_FACTOR)
 
         # Center
         x_sum = 0
@@ -79,21 +67,20 @@ def find_blocks(img) -> List[Block]:
             y_sum += xx[1]
         x_sum //= len(x)
         y_sum //= len(x)
-        center = (x_sum, y_sum)
         
         # Verschieben
         for i in range(len(x)):
             x[i] = (x[i][0] + block.position[0] - x_sum, x[i][1] + block.position[1] - y_sum)
 
         # Rotate shape
-        x = rot(x, block.position, block.rotation)
+        x = rotate_around_center(x, block.position, block.rotation)
 
         # Convert vertices' coordinates to integers
         for i in range(len(x)):
             x[i] = (round(x[i][0]), round(x[i][1]))
         
         # Draw shape after rotating
-        cv2.fillPoly(img, pts=np.array([x]), color=(255, 0, 255))
+        cv2.polylines(img, pts=np.array([x]), color=(0, 255, 0), thickness=3, isClosed=True)
         # Draw shape's center
         cv2.circle(img, block.position, 5, (100, 100, 100), -1)
 
@@ -101,24 +88,6 @@ def find_blocks(img) -> List[Block]:
     show_img_and_check_close('TEST', img)
 
     return blocks
-
-
-def find_shadow(img) -> Shadow:
-    shapes = __find_shadow_shapes(img)
-
-    return None
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -142,7 +111,7 @@ class BlockFeature:
     def get_scaled_area(self):
         TOLERANCE = 0.2
 
-        area = self.area * AREA_FACTOR
+        area = self.area / AREA_FACTOR
         area = round(area, 1)
 
         if abs(0.5 - area) <= TOLERANCE:
@@ -232,23 +201,10 @@ def __find_block_features(img) -> List[BlockFeature]:
     return features
 
 
-def __vector_angle(a, b) -> float:
-    dot_prod = np.dot(a, b)
-    len_prod = abs(np.linalg.norm(a)) * abs(np.linalg.norm(b))
-
-    angle = math.acos( dot_prod / len_prod )
-    angle = math.degrees(angle)
-
-    return angle
-
-
-
-
 def __process_block_features(features: List[BlockFeature], img) -> List[Block]:
     blocks: List[Block] = []
 
     for feature in features:
-        vertices = feature.vertices
         vertex_count = feature.get_vertex_count()
         area = feature.get_scaled_area()
         int_angles = feature.get_interior_angles()
@@ -256,104 +212,26 @@ def __process_block_features(features: List[BlockFeature], img) -> List[Block]:
         if vertex_count == 4 and area == 1.0:
 
             if max(int_angles) == 135.0:
-
-                #===============#
-                # PARALLELOGRAM #
-                #===============#
-
-                ref_vertex = vertices[int_angles.index(45)]
-                
-                angle = __vector_angle(ref_vertex - feature.center, (-1, -2)) % 180
-
-                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
-                print('PARALLELOGRAM: center=%s angle=%f°' % (feature.center, angle))
-
-                blocks.append(Block(SHAPES['PA'], feature.center, angle))
-
+                block = __process_parallelogram(feature, img)
+                blocks.append(block)
 
             else:
-
-                #========#
-                # SQUARE #
-                #========#
-
-                upper_vertex = None
-                for v in vertices:
-                    if upper_vertex is None:
-                        upper_vertex = v
-                    elif v[0][1] < upper_vertex[0][1]:
-                        upper_vertex = v
-
-                ref_vertex = upper_vertex
-                
-                angle = __vector_angle(ref_vertex - feature.center, (-1, -1)) % 90
-                
-                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
-                print('SQUARE: center=%s angle=%f°' % (feature.center, angle))
-
-                blocks.append(Block(SHAPES['SQ'], feature.center, angle))
-
+                block = __process_square(feature, img)
+                blocks.append(block)
 
         elif vertex_count == 3:
+
             if area == 0.5:
-
-                #================#
-                # SMALL TRIANGLE #
-                #================#
-
-                ref_vertex = vertices[int_angles.index(90)]
-                
-                angle = __vector_angle(ref_vertex - feature.center, (-1, -1))
-
-                # Fix rotation > 180°
-                cross = np.cross((ref_vertex-feature.center), (-1, -1))
-                if cross > 0:
-                    angle = 360 - angle
-                
-                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
-                print('SMALL TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
-
-                blocks.append(Block(SHAPES['ST'], feature.center, angle))
+                block = __process_small_triangle(feature, img)
+                blocks.append(block)
 
             elif area == 1.0:
-
-                #=================#
-                # MEDIUM TRIANGLE #
-                #=================#
-
-                ref_vertex = vertices[int_angles.index(90)]
-                
-                angle = __vector_angle(ref_vertex - feature.center, (0, 1))
-
-                # Fix rotation > 180°
-                cross = np.cross((ref_vertex-feature.center), (0, 1))
-                if cross > 0: # TODO: check if needs to be < 0
-                    angle = 360 - angle
-                
-                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
-                print('MEDIUM TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
-                
-                blocks.append(Block(SHAPES['MT'], feature.center, angle))
+                block = __process_medium_triangle(feature, img)
+                blocks.append(block)
 
             elif area == 2.0:
-
-                #================#
-                # LARGE TRIANGLE #
-                #================#
-
-                ref_vertex = vertices[int_angles.index(90)]
-                
-                angle = __vector_angle(ref_vertex - feature.center, (-1, -1))
-                
-                # Fix rotation > 180°
-                cross = np.cross((ref_vertex-feature.center), (-1, -1))
-                if cross > 0:
-                    angle = 360 - angle
-
-                cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
-                print('LARGE TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
-                
-                blocks.append(Block(SHAPES['LT'], feature.center, angle))
+                block = __process_large_triangle(feature, img)
+                blocks.append(block)
 
         else:
             print('Invalid Feature:', feature)
@@ -361,6 +239,85 @@ def __process_block_features(features: List[BlockFeature], img) -> List[Block]:
     return blocks
 
 
+def __process_parallelogram(feature: BlockFeature, img) -> Block:
+    interior_angles = feature.get_interior_angles()
+    ref_vertex = feature.vertices[interior_angles.index(45)]
+                
+    angle = vector_angle(ref_vertex - feature.center, (-1, -2)) % 180
+
+    cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+    L.debug('PARALLELOGRAM: center=%s angle=%f°' % (feature.center, angle))
+
+    return Block(SHAPES['PA'], feature.center, angle)
+
+
+def __process_square(feature: BlockFeature, img) -> Block:
+    upper_vertex = None
+    for v in feature.vertices:
+        if upper_vertex is None:
+            upper_vertex = v
+        elif v[0][1] < upper_vertex[0][1]:
+            upper_vertex = v
+
+    ref_vertex = upper_vertex
+    
+    angle = vector_angle(ref_vertex - feature.center, (-1, -1)) % 90
+    
+    cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+    L.debug('SQUARE: center=%s angle=%f°' % (feature.center, angle))
+
+    return Block(SHAPES['SQ'], feature.center, angle)
+
+
+def __process_small_triangle(feature: BlockFeature, img) -> Block:
+    interior_angles = feature.get_interior_angles()
+    ref_vertex = feature.vertices[interior_angles.index(90)]
+                
+    angle = vector_angle(ref_vertex - feature.center, (-1, -1))
+
+    # Fix rotation > 180°
+    cross = np.cross((ref_vertex-feature.center), (-1, -1))
+    if cross > 0:
+        angle = 360 - angle
+    
+    cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+    L.debug('SMALL TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
+
+    return Block(SHAPES['ST'], feature.center, angle)
+
+
+def __process_medium_triangle(feature: BlockFeature, img) -> Block:
+    interior_angles = feature.get_interior_angles()
+    ref_vertex = feature.vertices[interior_angles.index(90)]
+    
+    angle = vector_angle(ref_vertex - feature.center, (0, 1))
+
+    # Fix rotation > 180°
+    cross = np.cross((ref_vertex-feature.center), (0, 1))
+    if cross > 0: # TODO: check if needs to be < 0
+        angle = 360 - angle
+    
+    cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+    L.debug('MEDIUM TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
+    
+    return Block(SHAPES['MT'], feature.center, angle)
+
+
+def __process_large_triangle(feature: BlockFeature, img) -> Block:
+    interior_angles = feature.get_interior_angles()
+    ref_vertex = feature.vertices[interior_angles.index(90)]
+                
+    angle = vector_angle(ref_vertex - feature.center, (-1, -1))
+    
+    # Fix rotation > 180°
+    cross = np.cross((ref_vertex-feature.center), (-1, -1))
+    if cross > 0:
+        angle = 360 - angle
+
+    cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
+    L.debug('LARGE TRIANGLE: center=%s angle=%f°' % (feature.center, angle))
+    
+    return Block(SHAPES['LT'], feature.center, angle)
 
 
 
@@ -373,6 +330,14 @@ def __process_block_features(features: List[BlockFeature], img) -> List[Block]:
 
 
 
+
+
+
+
+def find_shadow(img) -> Shadow:
+    shapes = __find_shadow_shapes(img)
+
+    return None
 
 
 def __find_shadow_shapes(img):

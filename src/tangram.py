@@ -1,8 +1,8 @@
 from typing import List, Tuple
 
 
-AREA_FACTOR = 1 / 6000
-LENGTH_FACTOR = 1 / 40
+AREA_FACTOR = 6000
+LENGTH_FACTOR = 80
 
 
 class Shape:
