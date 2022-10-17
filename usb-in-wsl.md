@@ -1,9 +1,16 @@
 # Installation
 
-## Run in WSL to install service:
+## Run in WSL to install service
+### Ubuntu 20.04
 ```
 sudo apt install linux-tools-5.4.0-77-generic hwdata
 sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/5.4.0-77-generic/usbip 20
+```
+
+### Ubuntu 22.04.1
+```
+sudo apt install linux-tools-5.15.0-25-generic hwdata
+sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/5.15.0-25-generic/usbip 20
 ```
 
 ## Install usbip on windows
