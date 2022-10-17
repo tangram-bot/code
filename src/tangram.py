@@ -55,14 +55,12 @@ class Polygon:
 
 class Block(Polygon):
     def __init__(self, shape: Shape, position: Tuple[float, float], rotation: float):
-        super().__init__(shape.vertices, shape.interior_angles, shape.area, position, rotation)
+        super().__init__(shape.vertices, shape.interior_angles, shape.area, position, rotation)7
+
+    def get_rotated_vertices(self):
+        pass
 
 
 class Shadow(Polygon):
     def __init__(self, vertices):
         super().__init__(vertices)
-
-
-# BLOCKS = [
-#     Block([()])
-# ]
