@@ -7,6 +7,7 @@ from pyniryo import uncompress_image, undistort_image, vision, cv2
 from math import pi
 from os import getenv
 from PIL import Image
+import pickle
 
 from main import get_run_env
 
@@ -28,10 +29,11 @@ mtx = None
 dist = None
 capture = None
 
+camera_calibration = pickle.load(open("camera_calib.p", "rb" ))
 
-def get_usb_camera_intrinsics():
-    #TODO
-    return None, None
+def get_high_res_camera_intrinsics():
+    
+    return camera_calibration["mtx"], camera_calibration["dist"], camera_calibration["optimal_camera_matrix"]
 
 
 def init():
@@ -40,7 +42,7 @@ def init():
     global dist
     global capture
 
-    ip = getenv('NIRYO_IP') if get_run_env() == "prod" else "127.0.0.1"
+    ip = getenv('NIRYO_IP')
     if(get_run_env() == "dev"):
         L.info("DEV runtime, mocking robot")
         return
@@ -55,7 +57,7 @@ def init():
 
     capture = cv2.VideoCapture(0)
     if capture.isOpened():
-        mtx, dist = get_usb_camera_intrinsics()
+        mtx, dist = get_high_res_camera_intrinsics()
         L.info("Using connected USB camera")
     else:
         mtx, dist = bot.vision.get_camera_intrinsics()
