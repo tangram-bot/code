@@ -10,7 +10,7 @@ class Shape:
     interior_angles: List[float]
     area: float
 
-    def __init__(self, vertices: List[Tuple[float, float]], interior_angles: List[float], area: float):
+    def __init__(self, vertices: List[Tuple[float, float]], interior_angles: List[float], area: float) -> None:
         self.vertices = vertices
         self.interior_angles = interior_angles
         self.area = area
@@ -38,7 +38,7 @@ class Polygon:
     position: Tuple[float, float]
     rotation: float
 
-    def __init__(self, vertices: List[Tuple[float, float]], interior_angles: List[float], area: float, position: Tuple[float, float], rotation: float):
+    def __init__(self, vertices: List[Tuple[float, float]], interior_angles: List[float], area: float, position: Tuple[float, float], rotation: float) -> None:
         self.vertices = vertices
         self.interior_angles = interior_angles
         self.area = area
@@ -46,21 +46,21 @@ class Polygon:
         self.position = position
         self.rotation = rotation
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Polygon(vertices=%s, interior_angles=%s, area=%f, position=%s, rotation=%f)' % (self.vertices, self.interior_angles, self.area, self.position, self.rotation)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
 class Block(Polygon):
-    def __init__(self, shape: Shape, position: Tuple[float, float], rotation: float):
-        super().__init__(shape.vertices, shape.interior_angles, shape.area, position, rotation)7
+    def __init__(self, shape: Shape, position: Tuple[float, float], rotation: float) -> None:
+        super().__init__(shape.vertices, shape.interior_angles, shape.area, position, rotation)
 
     def get_rotated_vertices(self):
         pass
 
 
 class Shadow(Polygon):
-    def __init__(self, vertices):
+    def __init__(self, vertices) -> None:
         super().__init__(vertices)

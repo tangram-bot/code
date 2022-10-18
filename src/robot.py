@@ -36,7 +36,7 @@ def get_high_res_camera_intrinsics():
     return camera_calibration["mtx"], camera_calibration["dist"], camera_calibration["optimal_camera_matrix"]
 
 
-def init():
+def init() -> None:
     global bot
     global mtx
     global dist
@@ -55,13 +55,7 @@ def init():
 
     bot.tool.update_tool()
 
-    capture = cv2.VideoCapture(0)
-    if capture.isOpened():
-        mtx, dist = get_high_res_camera_intrinsics()
-        L.info("Using connected USB camera")
-    else:
-        mtx, dist = bot.vision.get_camera_intrinsics()
-        L.info("Using Robot Vision Set")
+    mtx, dist = get_high_res_camera_intrinsics()
 
 
 def mock_image(folder):
@@ -106,11 +100,9 @@ def scan_shadow():
 
 def take_picture():
     L.info("Taking picture")
-    if capture.isOpened():
-        _, img_dist = capture.read()
-    else:
-        img_comp = bot.vision.get_img_compressed() 
-        img_dist = uncompress_image(img_comp)
+
+    img_comp = bot.vision.get_img_compressed() 
+    img_dist = uncompress_image(img_comp)
     
     img = undistort_image(img_dist, mtx, dist)
 
@@ -122,7 +114,7 @@ def take_picture():
     return ws
 
 
-def pick(x, y):
+def pick(x, y) -> None:
     if(bot == None):
         return
 
@@ -148,7 +140,7 @@ def pick(x, y):
     bot.arm.move_linear_pose(pose_up)
 
 
-def place(x, y, rotate):
+def place(x, y, rotate) -> None:
     if(bot == None):
         return
 
@@ -169,7 +161,7 @@ def place(x, y, rotate):
     bot.arm.move_linear_pose(pose_up)
 
 
-def shutdown():
+def shutdown() -> None:
     if(bot == None):
         return
 
