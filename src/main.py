@@ -54,8 +54,8 @@ def main():
     blocks = cv.find_blocks(img)
     
     for b in blocks:
-        robot.pick(b[0], b[1])
-        robot.place(b[0], b[1], 0)
+        robot.pick(b.position[0], b.position[1])
+        robot.place(b.position[0], b.position[1], 0)
 
     while True:
         cv2.waitKey(1)

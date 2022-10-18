@@ -13,7 +13,7 @@ NW_BLOCKS = 'CV: Blocks'
 NW_SHADOW = 'CV: Shadow'
 
 
-def create_trackbar_uis():
+def create_trackbar_uis() -> None:
     cv2.namedWindow('CV: Blocks')
     cv2.createTrackbar('Blur Kernel',       NW_BLOCKS,  1,      10,     lambda x: x)
     cv2.createTrackbar('Mask Lower H',      NW_BLOCKS,  0,      255,    lambda x: x)
@@ -98,17 +98,17 @@ class BlockFeature:
     area: float
 
 
-    def __init__(self, vertices: List[Tuple[float, float]], center: Tuple[float, float], area: float):
+    def __init__(self, vertices: List[Tuple[float, float]], center: Tuple[float, float], area: float) -> None:
         self.vertices = vertices
         self.center = center
         self.area = area
 
 
-    def get_vertex_count(self):
+    def get_vertex_count(self) -> int:
         return len(self.vertices)
 
 
-    def get_scaled_area(self):
+    def get_scaled_area(self) -> float:
         TOLERANCE = 0.2
 
         area = self.area / AREA_FACTOR
@@ -126,7 +126,7 @@ class BlockFeature:
         return area
 
 
-    def get_interior_angles(self):
+    def get_interior_angles(self) -> list[float]:
         TOLERANCE = 20.0
 
         angles: List[float] = []
@@ -154,11 +154,11 @@ class BlockFeature:
         return angles
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'BlockFeature(vertices=%s, center=%s, area=%f)' % (self.vertices, self.center, self.area)
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
@@ -336,7 +336,7 @@ def find_shadow(img) -> Shadow:
     return None
 
 
-def __find_shadow_shapes(img):
+def __find_shadow_shapes(img) -> None:
     # Blur image to reduce noise
     img_blur = __blur(img, NW_SHADOW)
     
@@ -459,23 +459,23 @@ def __get_center(corners):
 # DRAW HELPER FUNCTIONS #
 #=======================#
 
-def __draw_contour(img, contour):
+def __draw_contour(img, contour) -> None:
     cv2.drawContours(img, contour, -1, (0, 0, 0), 2)
     cv2.drawContours(img, contour, -1, (0, 0, 255), 1)
 
 
-def __draw_corners(img, corners):
+def __draw_corners(img, corners) -> None:
     for corner in corners:
         cv2.circle(img, corner[0], 2, (0, 0, 0), -1)
         cv2.circle(img, corner[0], 1, (0, 255, 0), -1)
 
 
-def __draw_center(img, center):
+def __draw_center(img, center) -> None:
     cv2.circle(img, center, 2, (0, 0, 0), -1)
     cv2.circle(img, center, 1, (255, 0, 0), -1)
 
 
-def __draw_contour_info(img, contour, corners):
+def __draw_contour_info(img, contour, corners) -> None:
     num_corners = len(corners)
 
     x, y, _, _ = cv2.boundingRect(corners)
