@@ -29,7 +29,7 @@ mtx = None
 dist = None
 capture = None
 
-camera_calibration = pickle.load(open("camera_calib.p", "rb" ))
+camera_calibration = pickle.load(open("resources/camera_calib.p", "rb" ))
 
 def get_high_res_camera_intrinsics():
     

@@ -13,7 +13,7 @@ RECT_POINTS = [(0, 0), (40, 0), (40, 40), (0, 40)]
 PARALLELOGRAM_POINTS = [(0, 0), (40, 0), (60, 20), (20, 20)]
 CENTER_POINT_RADIUS = 2
 
-def create_window(name):
+def create_window(name) -> None:
     root = Tk()
     root.title('CYK')
     root.geometry('700x700')
@@ -48,7 +48,7 @@ def center_offset(points):
     return sum_x / len(points), sum_y / len(points)
 
 
-def draw_points(input_points, x, y, rot, c):
+def draw_points(input_points, x, y, rot, c) -> None:
 
     offset_x, offset_y = center_offset(input_points)
     points_around_origin = []
@@ -78,15 +78,15 @@ def draw_points(input_points, x, y, rot, c):
         y + CENTER_POINT_RADIUS, outline="#000", fill="#00f")
 
 
-def draw_rect(x, y, rot, c):
+def draw_rect(x, y, rot, c) -> None:
     draw_points(RECT_POINTS, x, y, rot, c)
 
 
-def draw_triangle(x, y, rot, c):
+def draw_triangle(x, y, rot, c) -> None:
     draw_points(TRIANGLE_POINTS, x, y, rot, c)
 
 
-def draw_parallelogram(x, y, rot, c):
+def draw_parallelogram(x, y, rot, c) -> None:
     draw_points(PARALLELOGRAM_POINTS, x, y, rot, c)
 
 
