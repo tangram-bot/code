@@ -17,12 +17,16 @@ L = logging.getLogger('Robot')
 SCAN_POSE_BLOCKS = [0.01, 0.16, 0.35, 0.0, pi/2, 1.57]
 SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
 
-WORKSPACE_WIDTH = 297
-WORKSPACE_HEIGHT = 210
 PICK_AND_PLACE_HEIGHT = 0.0015
 MOVEMENT_HEIGHT = 0.2
 GRIPPER_BASE_ROTATION=pi/2
+
+WORKSPACE_WIDTH = 297
+WORKSPACE_HEIGHT = 210
 WORKSPACE_RATIO = WORKSPACE_WIDTH / WORKSPACE_HEIGHT
+
+import pyniryo.vision.markers_detection as x
+x.IM_EXTRACT_SMALL_SIDE_PIXELS = 640
 
 bot: NiryoRobot = None
 mtx = None
@@ -31,9 +35,9 @@ capture = None
 
 camera_calibration = pickle.load(open("resources/camera_calib.p", "rb" ))
 
+
 def get_high_res_camera_intrinsics():
-    
-    return camera_calibration["mtx"], camera_calibration["dist"], camera_calibration["optimal_camera_matrix"]
+    return camera_calibration["mtx"], camera_calibration["dist"]
 
 
 def init() -> None:
