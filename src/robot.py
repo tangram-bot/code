@@ -14,7 +14,7 @@ from main import get_run_env
 
 L = logging.getLogger('Robot')
 
-SCAN_POSE_BLOCKS = [0.01, 0.16, 0.35, 0.0, pi/2, 1.57]
+SCAN_POSE_BLOCKS = [0.01, 0.15, 0.35, 0.0, pi/2, 1.57]
 SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
 
 PICK_AND_PLACE_HEIGHT = 0.0015
@@ -107,7 +107,7 @@ def take_picture():
 
     img_comp = bot.vision.get_img_compressed() 
     img_dist = uncompress_image(img_comp)
-    
+
     img = undistort_image(img_dist, mtx, dist)
 
     ws = vision.extract_img_workspace(img, WORKSPACE_RATIO)

@@ -41,19 +41,20 @@ L = logging.getLogger('Main')
 def main():
     L.info('HALLO!!')
 
+    # Initialize & calibrate robot
     robot.init()
 
-    img = robot.scan_blocks()
-    img2 = robot.scan_shadow()
+    img_blocks = robot.scan_blocks()
+    # img_shadow = robot.scan_shadow()
 
     cv.create_trackbar_uis()
 
     # procecss picture & extract data
-    blocks = cv.find_blocks(img)
+    blocks = cv.find_blocks(img_blocks)
     
     for b in blocks:
-        robot.pick(b.position[0], b.position[1])
-        robot.place(b.position[0], b.position[1], 0)
+        robot.pick(b.position[0] / 905, b.position[1] / 640)
+        robot.place(b.position[0] / 905, b.position[1] / 640, 0)
 
     while True:
         cv2.waitKey(1)
