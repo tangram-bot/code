@@ -128,7 +128,7 @@ def pick(x, y) -> None:
     # the gripper is not centered, so the position has to be corrected
     # this has to be done in place() as well, but there dynamically, as the gripper will rotate to the right orientation
     x = min(x + 0.05, 1)
-    y = max(y - 0.01, 0)
+    y = max(y - 0.03, 0)
 
     pose_up = bot.vision.get_target_pose_from_rel("blocks", MOVEMENT_HEIGHT, x, y, GRIPPER_BASE_ROTATION)
     pose_down = bot.vision.get_target_pose_from_rel("blocks", PICK_AND_PLACE_HEIGHT, x, y, GRIPPER_BASE_ROTATION)
