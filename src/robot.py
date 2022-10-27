@@ -15,7 +15,7 @@ from main import get_run_env
 L = logging.getLogger('Robot')
 
 SCAN_POSE_BLOCKS = [0.01, 0.15, 0.35, 0.0, pi/2, 1.57]
-SCAN_POSE_SHADOW = [-0.005, -0.155, 0.33, 0.0, pi/2, -1.57]
+SCAN_POSE_SHADOW = [-0.005, -0.14, 0.33, 0.0, pi/2, -1.57]
 
 PICK_AND_PLACE_HEIGHT = 0.0015
 MOVEMENT_HEIGHT = 0.2
