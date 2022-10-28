@@ -1,3 +1,4 @@
+import atexit
 import logging
 import os
 import random
@@ -171,3 +172,12 @@ def shutdown() -> None:
 
     L.info('Shutting down...')
     bot.arm.go_to_sleep()
+
+def close() -> None:
+    if(bot == None):
+        return
+    
+    L.info('Closing connection...')
+    bot.end()
+
+atexit.register(close)
