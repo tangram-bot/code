@@ -70,7 +70,7 @@ def tri_wok(edges:list, start_vertex:str, current_vertex:str, split_vertices:lis
 
 
 
-while True:
+def magic():
     img2 = cv.cvtColor(img.copy(), cv.COLOR_BGR2GRAY)
     img_canny = cv.Canny(img2, cv.getTrackbarPos('T1', 'Sliders'), cv.getTrackbarPos('T2', 'Sliders'))
 
@@ -277,6 +277,8 @@ while True:
     # show_img_and_check_close('Canny', img_canny)
     # show_img_and_check_close('Ronald', img_edges)
 
+while True:
+    magic()
     break
 
 
