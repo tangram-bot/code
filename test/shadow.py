@@ -34,6 +34,41 @@ def entfernung(a, b) -> float:
     return np.linalg.norm((a-b), 2)
 
 
+
+
+def tri_wok(edges:list, start_vertex:str, current_vertex:str, split_vertices:list[str]) -> list | None:
+    # sind wir wieder am start_vertex?
+    if current_vertex == start_vertex:
+        return []
+
+    # sind wir an einem split vertex, der nicht start_vertex ist?
+    for sv in split_vertices:
+        v_str = str(sv)
+        if v_str == current_vertex and v_str != start_vertex:
+            return None
+
+    # weiter den Kanten folgen
+    for e_idx in range(len(edges)):
+        edge = edges[e_idx]
+        for i in range(2):
+            v_str = str(edge[i])
+            if v_str == current_vertex:
+                ee = edges.copy()
+                ee.pop(e_idx)
+
+                sub_shadow = tri_wok(ee, start_vertex, str(edge[1-i]), split_vertices)
+
+                if sub_shadow is None:
+                    return None
+                
+                sub_shadow.append(edge)
+                return sub_shadow
+
+    return None
+
+
+
+
 while True:
     img2 = cv.cvtColor(img.copy(), cv.COLOR_BGR2GRAY)
     img_canny = cv.Canny(img2, cv.getTrackbarPos('T1', 'Sliders'), cv.getTrackbarPos('T2', 'Sliders'))
@@ -112,24 +147,65 @@ while True:
 
 
         # Prüfen, ob die Figur in kleiner Figuren zerlegt werden kann
-        x: dict[any, int] = {}
+        x: dict[str, int] = {}
         for edge in edges:
             for i in range(2):
                 a = edge[i]
                 val = x.setdefault(str(a), 0)
                 x[str(a)] = val + 1
-        can_split = False
-        for i in x.values():
-            if i >= 4:
-                can_split = True
-                break
+        
+        split_vertices: list[str] = []
+
+        for k, v in x.items():
+            if v >= 4:
+                split_vertices.append(k)
 
 
-        if can_split:
-            # TODO: Form zerlegen, falls möglich
-            pass
+        print('Juhu, es gibt Arbeit!' if (len(split_vertices)>0) else 'Hier gibt\'s nichts zu sehen, bitte gehen Sie weiter.')
 
-        print('Juhu, es gibt Arbeit!' if can_split else 'Wie langweilig...')
+
+        # TODO: Form zerlegen, falls möglich
+        for start_vertex in split_vertices:
+            for e_idx in range(len(edges)):
+                found_sub_shadow = False
+
+                edge = edges[e_idx]
+                for i in range(2):
+                    e_str = str(edge[i])
+                    if e_str == start_vertex:
+                        ee = edges.copy()
+                        ee.pop(e_idx)
+
+                        sub_shadow = tri_wok(ee, start_vertex, str(edge[1-i]), split_vertices)
+
+                        if sub_shadow is None:
+                            continue
+
+                        sub_shadow.append(edge)
+
+
+                        # remove sub_shadow from edges
+                        for ss_edge in sub_shadow:
+                            for ee_idx in range(len(edges)):
+                                eedge = edges[ee_idx]
+                                if str(ss_edge) == str(eedge):
+                                    edges.pop(ee_idx)
+                                    break
+
+                        # TODO: close hole in edges
+
+                        print('\n\nFound Sub Shadow:', len(sub_shadow), sub_shadow)
+
+                        found_sub_shadow = True
+
+                        break
+
+                if found_sub_shadow:
+                    break
+
+
+        print('\n\nEdges:', len(edges), edges)
+
 
 
         # Kanten im (oder gegen den) Uhrzeigersinn sortierern
@@ -139,8 +215,10 @@ while True:
                 
 
     show_img_and_check_close('Img', img3)
-    show_img_and_check_close('Canny', img_canny)
-    show_img_and_check_close('Ronald', img_edges)
+    # show_img_and_check_close('Canny', img_canny)
+    # show_img_and_check_close('Ronald', img_edges)
+
+    break
 
 
 while True:
