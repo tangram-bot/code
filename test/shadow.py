@@ -1,4 +1,5 @@
 from math import floor, sqrt
+import math
 from pyniryo import cv2 as cv, show_img_and_check_close
 import numpy as np
 
@@ -85,6 +86,8 @@ while True:
 
 
     contours, _ = cv.findContours(img_edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+
+    shadows = []
 
     for c in contours:
 
@@ -194,7 +197,7 @@ while True:
 
                         # TODO: close hole in edges
 
-                        print('\n\nFound Sub Shadow:', len(sub_shadow), sub_shadow)
+                        shadows.append(sub_shadow)
 
                         found_sub_shadow = True
 
@@ -203,13 +206,69 @@ while True:
                 if found_sub_shadow:
                     break
 
-
-        print('\n\nEdges:', len(edges), edges)
-
+        shadows.append(edges)
 
 
-        # Kanten im (oder gegen den) Uhrzeigersinn sortierern
+    shadows_e = []
 
+    # Kanten im (oder gegen den) Uhrzeigersinn sortierern
+
+    for shadow in shadows:
+        shadow_e = [shadow[0][0][0]]
+
+        while len(shadow) > 0:
+            for edge_idx in range(len(shadow)):
+                edge = shadow[edge_idx]
+                found = False
+                for i in range(2):
+                    if edge[i][0][0] == shadow_e[len(shadow_e)-1][0] and edge[i][0][1] == shadow_e[len(shadow_e)-1][1]:
+                        shadow_e.append(edge[1-i][0])
+                        shadow.pop(edge_idx)
+                        found = True
+                        break
+                if found:
+                    break
+
+        # Start- und Endpunkt sind gleich -> einer kann weg
+        shadow_e.pop(0)
+
+        shadows_e.append(shadow_e)
+
+
+    # Innenwinkel
+    for shadow in shadows_e:
+        print('\n\n', len(shadow))
+        int_angle_sum = 0
+        out_angle_sum = 0
+
+        for i in range(len(shadow)):
+
+            v = shadow[i]
+            a = shadow[(i+1)%len(shadow)]
+            b = shadow[(i-1)%len(shadow)]
+
+            a = a - v
+            b = b - v
+
+            dot_prod = np.dot(a, b)
+            len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
+            angle = math.acos(dot_prod / len_prod)
+            angle = math.degrees(angle)
+
+            cross_prod = np.cross(a, b)
+            if cross_prod < 0:
+                angle = 360 - angle
+
+            int_angle_sum += angle
+            out_angle_sum += 360 - angle
+
+            # print('a', a)
+            # print('b', b)
+            # print('angle', angle)
+
+        print()
+        print('Inner Angle Sum', round(int_angle_sum, 2))
+        print('Outer Angle Sum', round(out_angle_sum, 2))
 
 
                 
