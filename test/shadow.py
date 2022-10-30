@@ -163,11 +163,12 @@ def magic():
             if v >= 4:
                 split_vertices.append(k)
 
+        if len(split_vertices) > 0:
+            print('Shadow kann', len(split_vertices), 'Mal zerlegt werden')
+        else:
+            print('Shadow kann nicht zerlegt werden')
 
-        print('Juhu, es gibt Arbeit!' if (len(split_vertices)>0) else 'Hier gibt\'s nichts zu sehen, bitte gehen Sie weiter.')
-
-
-        # TODO: Form zerlegen, falls möglich
+        # Form zerlegen, falls möglich
         for start_vertex in split_vertices:
             for e_idx in range(len(edges)):
                 found_sub_shadow = False
@@ -237,9 +238,10 @@ def magic():
 
     # Innenwinkel
     for shadow in shadows_e:
-        print('\n\n', len(shadow))
-        int_angle_sum = 0
-        out_angle_sum = 0
+        print('\n\nDas ist mein Shadow. Er hat', len(shadow), 'Ecken:')
+
+        int_angles: list[float] = []
+        out_angles: list[float] = []
 
         for i in range(len(shadow)):
 
@@ -255,20 +257,43 @@ def magic():
             angle = math.acos(dot_prod / len_prod)
             angle = math.degrees(angle)
 
+            # acos() gibt nur Werte <=180° zurück
+            # hier korrigieren wir größere Innenwinkel
             cross_prod = np.cross(a, b)
             if cross_prod < 0:
                 angle = 360 - angle
 
-            int_angle_sum += angle
-            out_angle_sum += 360 - angle
+            int_angles.append(angle)
+            out_angles.append(360 - angle)
 
-            # print('a', a)
-            # print('b', b)
-            # print('angle', angle)
 
-        print()
-        print('Inner Angle Sum', round(int_angle_sum, 2))
-        print('Outer Angle Sum', round(out_angle_sum, 2))
+        # Winkel auf 45° runden
+        # (Alle Winkel müssen Vielfache von 45° sein)
+        for i in range(len(int_angles)):
+            for j in range(8):
+                perfect_angle = (j+1)*45
+                if abs( perfect_angle - int_angles[i] ) <= 22.5:
+                    int_angles[i] = perfect_angle
+                    break
+
+        for i in range(len(out_angles)):
+            for j in range(8):
+                perfect_angle = (j+1)*45
+                if abs( perfect_angle - out_angles[i] ) <= 22.5:
+                    out_angles[i] = perfect_angle
+                    break
+            
+
+        ideal_int_angle_count = ( len(shadow) - 2 ) * 180
+
+        if ideal_int_angle_count == sum(int_angles):
+            print('Winkelsumme: ' + str(sum(int_angles)) + '°')
+            print(int_angles)
+        else:
+            print('Winkelsumme: ' + str(sum(out_angles)) + '°')
+            print(out_angles)
+
+        # TODO: Ecken mit 180°-Winkel entfernen
 
 
                 
