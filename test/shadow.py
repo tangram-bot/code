@@ -15,34 +15,42 @@ img = cv.imread('img/shadow/ronald.png')
 
 
 
-
-def gibt_es_die_kante_schon(edges, a, b) -> bool:
+# Checks if edges contains the edge between a and b 
+def edge_exists(edges: list, a, b) -> bool:
     for edge in edges:
         eps = 10
         
         # vorwärts
-        if entfernung(edge[0], a) < eps and entfernung(edge[1], b) < eps:
+        if distance(edge[0], a) < eps and distance(edge[1], b) < eps:
             return True
 
         # rückwärts
-        if entfernung(edge[0], b) < eps and entfernung(edge[1], a) < eps:
+        if distance(edge[0], b) < eps and distance(edge[1], a) < eps:
             return True
 
     return False
 
 
-def entfernung(a, b) -> float:
+# Calculates and returns the distance between the points a and b
+def distance(a, b) -> float:
     return np.linalg.norm((a-b), 2)
 
 
 
 
-def tri_wok(edges:list, start_vertex:str, current_vertex:str, split_vertices:list[str]) -> list | None:
+# edges:            A list of all available edges
+# start_vertex:     Vertex where the current path started
+# current_vertex:   Current vertex from which the next edge is searched
+# split_vertices:   A list of all points where the shadow can be split
+def tri_wok(edges: list, start_vertex: str, current_vertex: str, split_vertices: list[str]) -> list | None:
+
     # sind wir wieder am start_vertex?
+    # Falls ja: Pfad ist vollständig -> wir müssen nicht weiter suchen
     if current_vertex == start_vertex:
         return []
 
-    # sind wir an einem split vertex, der nicht start_vertex ist?
+    # sind wir an einem Split Vertex, der nicht start_vertex ist?
+    # falls ja: Abbruch
     for sv in split_vertices:
         v_str = str(sv)
         if v_str == current_vertex and v_str != start_vertex:
@@ -51,18 +59,31 @@ def tri_wok(edges:list, start_vertex:str, current_vertex:str, split_vertices:lis
     # weiter den Kanten folgen
     for e_idx in range(len(edges)):
         edge = edges[e_idx]
+
+        # Beide Endpunkte der Kante betrachten
         for i in range(2):
             v_str = str(edge[i])
+
+            # Wenn v_str == current_vertex, dann grenzt edge an den aktuellen Vertex
+            # => die Kante kommt für den Pfad in Frage
             if v_str == current_vertex:
+
+                # Aktuelle Kante aus edges entfernen, damit sie bei
+                # rekursiven Aufrufen nicht erneut benutzt wird
                 ee = edges.copy()
                 ee.pop(e_idx)
 
+                # Rekursiver Aufruf, um den Pfad weiter aufzubauen
                 sub_shadow = tri_wok(ee, start_vertex, str(edge[1-i]), split_vertices)
 
+                # None wird nur zurückgegeben, wenn der Pfad ungültig ist
+                # es kann also einfach weitergegeben werden
                 if sub_shadow is None:
                     return None
                 
+                # Aktuelle Kante zum Shadow hinzufügen, wenn der Pfad gültig ist
                 sub_shadow.append(edge)
+
                 return sub_shadow
 
     return None
@@ -70,20 +91,18 @@ def tri_wok(edges:list, start_vertex:str, current_vertex:str, split_vertices:lis
 
 
 
-def magic():
+def magic() -> None:
+    # TODO: ggf. Blur
+
     img2 = cv.cvtColor(img.copy(), cv.COLOR_BGR2GRAY)
+    
     img_canny = cv.Canny(img2, cv.getTrackbarPos('T1', 'Sliders'), cv.getTrackbarPos('T2', 'Sliders'))
 
     kernel_size = 1
     kernel = np.ones((kernel_size, kernel_size))
     img_edges = cv.dilate(img_canny, kernel, iterations=1)
 
-
     img3 = img.copy()
-
-
-
-
 
     contours, _ = cv.findContours(img_edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
 
@@ -117,7 +136,7 @@ def magic():
 
                 b = corners[j]
 
-                if entfernung(a, b) < 10:
+                if distance(a, b) < 10:
                     indexs.append(j)
                     x_sum += b[0][0]
                     y_sum += b[0][1]
@@ -136,37 +155,46 @@ def magic():
             cv.circle(img3, c[0], 4, (0, 255, 0), -1)
 
 
-        # Kanten generieren
+        # Kanten aus Eckpunkten generieren
         edges = []
         for i in range(len(corners)):
             a = corners[i]
             b = corners[i-1]
 
-            if entfernung(a, b) < 10:
+            # TODO: ist das Kunst oder kann das weg?
+            # ähnliche Punkte wurden oben zusammengefasst, diese Überprüfung müsste überflüssig sein
+            if distance(a, b) < 10:
                 continue
 
-            if len(edges) == 0 or not gibt_es_die_kante_schon(edges, a, b):
+            # Falls es noch keine Kante zwischen a und b gibt, füge sie zu edges hinzu
+            if len(edges) == 0 or not edge_exists(edges, a, b):
                 edges.append([a, b])
+
+
 
 
         # Prüfen, ob die Figur in kleiner Figuren zerlegt werden kann
         x: dict[str, int] = {}
+        # Zählen, wieviele Kante an jedem Eckpunkt anliegen
         for edge in edges:
             for i in range(2):
                 a = edge[i]
                 val = x.setdefault(str(a), 0)
                 x[str(a)] = val + 1
         
+        # Die Figur kann nur an Punkten zerlegt werden, an denen mindestens
+        # vier Kanten anliegen
         split_vertices: list[str] = []
-
         for k, v in x.items():
             if v >= 4:
                 split_vertices.append(k)
+
 
         if len(split_vertices) > 0:
             print('Shadow kann', len(split_vertices), 'Mal zerlegt werden')
         else:
             print('Shadow kann nicht zerlegt werden')
+
 
         # Form zerlegen, falls möglich
         for start_vertex in split_vertices:
@@ -210,10 +238,9 @@ def magic():
         shadows.append(edges)
 
 
-    shadows_e = []
 
     # Kanten im (oder gegen den) Uhrzeigersinn sortierern
-
+    shadows_e = []
     for shadow in shadows:
         shadow_e = [shadow[0][0][0]]
 
@@ -236,10 +263,15 @@ def magic():
         shadows_e.append(shadow_e)
 
 
+
     # Innenwinkel
     for shadow in shadows_e:
         print('\n\nDas ist mein Shadow. Er hat', len(shadow), 'Ecken:')
 
+        # Die Namen der Variablen sind ein bisschen blöd gewählt
+        # Wir können uns hier noch nicht sicher sein, welche Winkel
+        # innen und welche außen liegen. Das ist erst weiter unten
+        # mit ideal_int_angle_count möglich.
         int_angles: list[float] = []
         out_angles: list[float] = []
 
@@ -267,15 +299,14 @@ def magic():
             out_angles.append(360 - angle)
 
 
-        # Winkel auf 45° runden
-        # (Alle Winkel müssen Vielfache von 45° sein)
+        # Alle Winkel müssen Vielfache von 45° sein
+        # Hier werden Messungenauigkeiten entfernt
         for i in range(len(int_angles)):
             for j in range(8):
                 perfect_angle = (j+1)*45
                 if abs( perfect_angle - int_angles[i] ) <= 22.5:
                     int_angles[i] = perfect_angle
                     break
-
         for i in range(len(out_angles)):
             for j in range(8):
                 perfect_angle = (j+1)*45
@@ -283,9 +314,11 @@ def magic():
                     out_angles[i] = perfect_angle
                     break
             
-
+        # Innenwinkelsumme jedes Polygons kann mithilfe dieser Formel berechnet werden
         ideal_int_angle_count = ( len(shadow) - 2 ) * 180
 
+        # Mit ideal_int_angle_count können wir hier schauen,
+        # was innen und was außen ist
         if ideal_int_angle_count == sum(int_angles):
             print('Winkelsumme: ' + str(sum(int_angles)) + '°')
             print(int_angles)
