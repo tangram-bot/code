@@ -11,8 +11,55 @@ cv.createTrackbar('Area', 'Sliders', 120, 500, lambda x: x)
 cv.createTrackbar('Corner Acc', 'Sliders', 20, 100, lambda x: x)
 
 
-img = cv.imread('img/shadow/ente.png')
+img = cv.imread('img/shadow/ronald.png')
 
+
+# Calculates and returns the distance between the points a and b
+def distance(a, b) -> float:
+    return np.linalg.norm((a-b), 2)
+
+
+def summarize_similar_points(points: list) -> None:
+    for i in range(len(points)):
+        a = points[i]
+        
+        indexs = [i]
+        x_sum = a[0][0]
+        y_sum = a[0][1]
+
+        for j in range(len(points)):
+            if i == j: 
+                continue
+
+            b = points[j]
+
+            if distance(a, b) < 10:
+                indexs.append(j)
+                x_sum += b[0][0]
+                y_sum += b[0][1]
+
+        x_sum /= len(indexs)
+        y_sum /= len(indexs)
+
+        for idx in indexs:
+            points[idx] = [x_sum, y_sum]
+
+
+def generate_edges(corners: list) -> list:
+    edges = []
+    for i in range(len(corners)):
+        a = corners[i]
+        b = corners[i-1]
+
+        # TODO: ist das Kunst oder kann das weg?
+        # ähnliche Punkte wurden oben zusammengefasst, diese Überprüfung müsste überflüssig sein
+        if distance(a, b) < 10:
+            continue
+
+        # Falls es noch keine Kante zwischen a und b gibt, füge sie zu edges hinzu
+        if len(edges) == 0 or not edge_exists(edges, a, b):
+            edges.append([a, b])
+    return edges
 
 
 # Checks if edges contains the edge between a and b 
@@ -31,11 +78,69 @@ def edge_exists(edges: list, a, b) -> bool:
     return False
 
 
-# Calculates and returns the distance between the points a and b
-def distance(a, b) -> float:
-    return np.linalg.norm((a-b), 2)
+def find_split_points(edges) -> list[str]:
+    # Prüfen, ob die Figur in kleiner Figuren zerlegt werden kann
+    x: dict[str, int] = {}
+    # Zählen, wieviele Kante an jedem Eckpunkt anliegen
+    for edge in edges:
+        for i in range(2):
+            a = edge[i]
+            val = x.setdefault(str(a), 0)
+            x[str(a)] = val + 1
+    
+    # Die Figur kann nur an Punkten zerlegt werden, an denen mindestens
+    # vier Kanten anliegen
+    split_vertices: list[str] = []
+    for k, v in x.items():
+        if v >= 4:
+            split_vertices.append(k)
+
+    return split_vertices
 
 
+def split_shadow(edges, split_vertices) -> list:
+    shadows = []
+
+    # Form zerlegen, falls möglich
+    for start_vertex in split_vertices:
+        for e_idx in range(len(edges)):
+            found_sub_shadow = False
+
+            edge = edges[e_idx]
+            for i in range(2):
+                e_str = str(edge[i])
+                if e_str == start_vertex:
+                    ee = edges.copy()
+                    ee.pop(e_idx)
+
+                    sub_shadow = tri_wok(ee, start_vertex, str(edge[1-i]), split_vertices)
+
+                    if sub_shadow is None:
+                        continue
+
+                    sub_shadow.append(edge)
+
+
+                    # remove sub_shadow from edges
+                    for ss_edge in sub_shadow:
+                        for ee_idx in range(len(edges)):
+                            eedge = edges[ee_idx]
+                            if str(ss_edge) == str(eedge):
+                                edges.pop(ee_idx)
+                                break
+
+                    shadows.append(sub_shadow)
+
+                    found_sub_shadow = True
+
+                    break
+
+            if found_sub_shadow:
+                break
+
+    shadows.append(edges)
+
+    return shadows
 
 
 # edges:            A list of all available edges
@@ -89,6 +194,94 @@ def tri_wok(edges: list, start_vertex: str, current_vertex: str, split_vertices:
     return None
 
 
+# Kanten im (oder gegen den) Uhrzeigersinn sortierern
+def sort_shadow_edges(shadows) -> list:
+    shadows_sorted = []
+
+    for shadow in shadows:
+        shadow_e = [shadow[0][0][0]]
+
+        while len(shadow) > 0:
+            for edge_idx in range(len(shadow)):
+                edge = shadow[edge_idx]
+                found = False
+                for i in range(2):
+                    if edge[i][0][0] == shadow_e[len(shadow_e)-1][0] and edge[i][0][1] == shadow_e[len(shadow_e)-1][1]:
+                        shadow_e.append(edge[1-i][0])
+                        shadow.pop(edge_idx)
+                        found = True
+                        break
+                if found:
+                    break
+
+        # Start- und Endpunkt sind gleich -> einer kann weg
+        shadow_e.pop(0)
+
+        shadows_sorted.append(shadow_e)
+
+    return shadows_sorted
+
+
+def calculate_angles(shadow: list) -> tuple[list, list]:
+    angles_1: list[float] = []
+    angles_2: list[float] = []
+
+    for i in range(len(shadow)):
+
+        v = shadow[i]
+        a = shadow[(i+1)%len(shadow)]
+        b = shadow[(i-1)%len(shadow)]
+
+        a = a - v
+        b = b - v
+
+        dot_prod = np.dot(a, b)
+        len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
+        angle = math.acos(dot_prod / len_prod)
+        angle = math.degrees(angle)
+
+        # acos() gibt nur Werte <=180° zurück
+        # hier korrigieren wir größere Innenwinkel
+        cross_prod = np.cross(a, b)
+        if cross_prod < 0:
+            angle = 360 - angle
+
+        angles_1.append(angle)
+        angles_2.append(360 - angle)
+
+    return angles_1, angles_2
+
+
+# Alle Winkel müssen Vielfache von 45° sein
+# Hier werden Messungenauigkeiten entfernt
+def fix_angles(angles: list):
+    for i in range(len(angles)):
+        for j in range(8):
+            perfect_angle = (j+1)*45
+            if abs( perfect_angle - angles[i] ) <= 22.5:
+                angles[i] = perfect_angle
+                break
+
+
+# Ecken mit 180°-Winkeln entfernen
+def remove_straight_angles(shadow, angles_1, angles_2):
+    to_remove = []
+    
+    for i in range(len(angles_1)):
+        if angles_1[i] == 180:
+            to_remove.append(i)
+    
+    # Invert list
+    # Otherwise the indexes would shift while removing elements
+    to_remove = to_remove[::-1]
+
+    for i in to_remove:
+        shadow.pop(i)
+        angles_1.pop(i)
+        angles_2.pop(i)
+
+
+
 
 
 def magic() -> None:
@@ -111,9 +304,7 @@ def magic() -> None:
         if cv.contourArea(c) < cv.getTrackbarPos('Area', 'Sliders'):
             continue
         
-        
         cv.drawContours(img3, c, -1, (255, 0, 255), 2)
-
 
         accuracy = cv.getTrackbarPos('Corner Acc', 'Sliders')
         perimeter = cv.arcLength(c, True)
@@ -121,200 +312,37 @@ def magic() -> None:
 
 
         # Punkte mit ähnlichen Koordinaten zusammenfassen
-        for i in range(len(corners)):
-            a = corners[i]
-            
-            indexs = [i]
-            x_sum = a[0][0]
-            y_sum = a[0][1]
-
-            for j in range(len(corners)):
-                if i == j: 
-                    continue
-
-                b = corners[j]
-
-                if distance(a, b) < 10:
-                    indexs.append(j)
-                    x_sum += b[0][0]
-                    y_sum += b[0][1]
-
-            x_sum /= len(indexs)
-            y_sum /= len(indexs)
-
-            for idx in indexs:
-                corners[idx] = [x_sum, y_sum]
-
+        summarize_similar_points(corners)
 
         # Kanten aus Eckpunkten generieren
-        edges = []
-        for i in range(len(corners)):
-            a = corners[i]
-            b = corners[i-1]
-
-            # TODO: ist das Kunst oder kann das weg?
-            # ähnliche Punkte wurden oben zusammengefasst, diese Überprüfung müsste überflüssig sein
-            if distance(a, b) < 10:
-                continue
-
-            # Falls es noch keine Kante zwischen a und b gibt, füge sie zu edges hinzu
-            if len(edges) == 0 or not edge_exists(edges, a, b):
-                edges.append([a, b])
-
-
-
-
-        # Prüfen, ob die Figur in kleiner Figuren zerlegt werden kann
-        x: dict[str, int] = {}
-        # Zählen, wieviele Kante an jedem Eckpunkt anliegen
-        for edge in edges:
-            for i in range(2):
-                a = edge[i]
-                val = x.setdefault(str(a), 0)
-                x[str(a)] = val + 1
+        edges = generate_edges(corners)
         
-        # Die Figur kann nur an Punkten zerlegt werden, an denen mindestens
-        # vier Kanten anliegen
-        split_vertices: list[str] = []
-        for k, v in x.items():
-            if v >= 4:
-                split_vertices.append(k)
-
+        # Punkte finden, an denen die Figur zerlegt werden kann
+        split_vertices = find_split_points(edges)
 
         if len(split_vertices) > 0:
             print('Shadow kann', len(split_vertices), 'Mal zerlegt werden')
         else:
             print('Shadow kann nicht zerlegt werden')
 
-
-        # Form zerlegen, falls möglich
-        for start_vertex in split_vertices:
-            for e_idx in range(len(edges)):
-                found_sub_shadow = False
-
-                edge = edges[e_idx]
-                for i in range(2):
-                    e_str = str(edge[i])
-                    if e_str == start_vertex:
-                        ee = edges.copy()
-                        ee.pop(e_idx)
-
-                        sub_shadow = tri_wok(ee, start_vertex, str(edge[1-i]), split_vertices)
-
-                        if sub_shadow is None:
-                            continue
-
-                        sub_shadow.append(edge)
+        sub_shadows = split_shadow(edges, split_vertices)
+        for sub_shadow in sub_shadows:
+            shadows.append(sub_shadow)
 
 
-                        # remove sub_shadow from edges
-                        for ss_edge in sub_shadow:
-                            for ee_idx in range(len(edges)):
-                                eedge = edges[ee_idx]
-                                if str(ss_edge) == str(eedge):
-                                    edges.pop(ee_idx)
-                                    break
-
-                        shadows.append(sub_shadow)
-
-                        found_sub_shadow = True
-
-                        break
-
-                if found_sub_shadow:
-                    break
-
-        shadows.append(edges)
-
-
-
-    # Kanten im (oder gegen den) Uhrzeigersinn sortierern
-    shadows_e = []
-    for shadow in shadows:
-        shadow_e = [shadow[0][0][0]]
-
-        while len(shadow) > 0:
-            for edge_idx in range(len(shadow)):
-                edge = shadow[edge_idx]
-                found = False
-                for i in range(2):
-                    if edge[i][0][0] == shadow_e[len(shadow_e)-1][0] and edge[i][0][1] == shadow_e[len(shadow_e)-1][1]:
-                        shadow_e.append(edge[1-i][0])
-                        shadow.pop(edge_idx)
-                        found = True
-                        break
-                if found:
-                    break
-
-        # Start- und Endpunkt sind gleich -> einer kann weg
-        shadow_e.pop(0)
-
-        shadows_e.append(shadow_e)
-
+    shadows = sort_shadow_edges(shadows)
 
 
     # Innenwinkel
-    for shadow in shadows_e:
+    for shadow in shadows:
 
-        # Die Namen der Variablen sind ein bisschen blöd gewählt
-        # Wir können uns hier noch nicht sicher sein, welche Winkel
-        # innen und welche außen liegen. Das ist erst weiter unten
-        # mit ideal_int_angle_count möglich.
-        int_angles: list[float] = []
-        out_angles: list[float] = []
+        angles_1, angles_2 = calculate_angles(shadow)
 
-        for i in range(len(shadow)):
+        fix_angles(angles_1)
+        fix_angles(angles_2)
 
-            v = shadow[i]
-            a = shadow[(i+1)%len(shadow)]
-            b = shadow[(i-1)%len(shadow)]
+        remove_straight_angles(shadow, angles_1, angles_2)
 
-            a = a - v
-            b = b - v
-
-            dot_prod = np.dot(a, b)
-            len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
-            angle = math.acos(dot_prod / len_prod)
-            angle = math.degrees(angle)
-
-            # acos() gibt nur Werte <=180° zurück
-            # hier korrigieren wir größere Innenwinkel
-            cross_prod = np.cross(a, b)
-            if cross_prod < 0:
-                angle = 360 - angle
-
-            int_angles.append(angle)
-            out_angles.append(360 - angle)
-
-
-        # Alle Winkel müssen Vielfache von 45° sein
-        # Hier werden Messungenauigkeiten entfernt
-        for i in range(len(int_angles)):
-            for j in range(8):
-                perfect_angle = (j+1)*45
-                if abs( perfect_angle - int_angles[i] ) <= 22.5:
-                    int_angles[i] = perfect_angle
-                    break
-        for i in range(len(out_angles)):
-            for j in range(8):
-                perfect_angle = (j+1)*45
-                if abs( perfect_angle - out_angles[i] ) <= 22.5:
-                    out_angles[i] = perfect_angle
-                    break
-
-
-        # Ecken mit 180°-Winkeln entfernen
-        to_remove = []
-        for i in range(len(int_angles)):
-            if int_angles[i] == 180:
-                to_remove.append(i)
-        to_remove = to_remove[::-1]
-        for i in to_remove:
-            shadow.pop(i)
-            int_angles.pop(i)
-            out_angles.pop(i)
-
-        
         # Ecken markieren
         for c in shadow:
             cv.circle(img3, c, 5, (0, 0, 0), -1)
@@ -328,12 +356,12 @@ def magic() -> None:
 
         # Mit ideal_int_angle_count können wir hier schauen,
         # was innen und was außen ist
-        if ideal_int_angle_count == sum(int_angles):
-            print('Winkelsumme: ' + str(sum(int_angles)) + '°')
-            print(int_angles)
+        if ideal_int_angle_count == sum(angles_1):
+            print('Winkelsumme: ' + str(sum(angles_1)) + '°')
+            print(angles_1)
         else:
-            print('Winkelsumme: ' + str(sum(out_angles)) + '°')
-            print(out_angles)
+            print('Winkelsumme: ' + str(sum(angles_2)) + '°')
+            print(angles_2)
 
 
                 
