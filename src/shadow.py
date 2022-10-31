@@ -1,4 +1,5 @@
 import math
+from random import random
 from pyniryo import cv2 as cv, show_img_and_check_close
 import numpy as np
 
@@ -348,11 +349,17 @@ def __find_shadow_features() -> None:
         remove_straight_angles(shadow, angles_1, angles_2)
 
         # Ecken markieren
+        points = []
         for c in shadow.get_points():
-            center = (int(c.get_x()), int(c.get_y()))
-            cv.circle(img3, center, 5, (0, 0, 0), -1)
-            cv.circle(img3, center, 4, (0, 255, 0), -1)
-
+            center = [int(c.get_x()), int(c.get_y())]
+            points.append(center)
+        hsv = np.uint8([[[ int(random() * 255), 255, 255 ]]])  
+        bgr = cv.cvtColor(hsv, cv.COLOR_HSV2BGR).flatten()
+        bgr = (int(bgr[0]), int(bgr[1]), int(bgr[2]))
+        cv.polylines(img3, np.array([points]), True, bgr, 3)
+        for c in points:
+            cv.circle(img3, c, 5, (0, 0, 0), -1)
+            cv.circle(img3, c, 3, (255, 255, 255), -1)
     
         print('\n\nDas ist mein Shadow. Er hat', len(shadow.get_points()), 'Ecken:')        
          
