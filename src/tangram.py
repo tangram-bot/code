@@ -31,35 +31,6 @@ SHAPES: dict[str, Shape] = {
     'PA': Shape([(0, 0), (1, 1), (1, 2), (0, 1)], [45, 135, 45, 135], 1),
 }
 
-def hash_number(n):
-    if n == 0:
-        return "11"
-    if n == 1:
-        return "12"
-    if n == 2:
-        return "13"
-    if n == 3:
-        return "14"
-    if n == 4:
-        return "15"
-    if n == 5:
-        return "16"
-    if n == 6:
-        return "17"
-    if n == 7:
-        return "18"
-    if n == 8:
-        return "19"
-    if n == 9:
-        return "20"
-
-def hash_numbers(n):
-    letters = str(int(n)).split("")
-    result = ""
-    for letter in letters:
-        result += hash_number(letter)
-    return int(result)
-
 class Point:
     x: int
     y: int
