@@ -196,30 +196,32 @@ def tri_wok(edges: list, start_vertex: str, current_vertex: str, split_vertices:
 
 # Kanten im (oder gegen den) Uhrzeigersinn sortierern
 def sort_shadow_edges(shadows) -> list:
-    shadows_sorted = []
+    sorted_shadows = []
 
     for shadow in shadows:
-        shadow_e = [shadow[0][0][0]]
+        sorted_edges = [shadow[0][0][0]]
 
         while len(shadow) > 0:
             for edge_idx in range(len(shadow)):
                 edge = shadow[edge_idx]
                 found = False
+
                 for i in range(2):
-                    if edge[i][0][0] == shadow_e[len(shadow_e)-1][0] and edge[i][0][1] == shadow_e[len(shadow_e)-1][1]:
-                        shadow_e.append(edge[1-i][0])
+                    if edge[i][0][0] == sorted_edges[len(sorted_edges)-1][0] and edge[i][0][1] == sorted_edges[len(sorted_edges)-1][1]:
+                        sorted_edges.append(edge[1-i][0])
                         shadow.pop(edge_idx)
                         found = True
                         break
+
                 if found:
                     break
 
         # Start- und Endpunkt sind gleich -> einer kann weg
-        shadow_e.pop(0)
+        sorted_edges.pop(0)
 
-        shadows_sorted.append(shadow_e)
+        sorted_shadows.append(sorted_edges)
 
-    return shadows_sorted
+    return sorted_shadows
 
 
 def calculate_angles(shadow: list) -> tuple[list, list]:
@@ -254,7 +256,7 @@ def calculate_angles(shadow: list) -> tuple[list, list]:
 
 # Alle Winkel müssen Vielfache von 45° sein
 # Hier werden Messungenauigkeiten entfernt
-def fix_angles(angles: list):
+def fix_angles(angles: list) -> None:
     for i in range(len(angles)):
         for j in range(8):
             perfect_angle = (j+1)*45
@@ -264,7 +266,7 @@ def fix_angles(angles: list):
 
 
 # Ecken mit 180°-Winkeln entfernen
-def remove_straight_angles(shadow, angles_1, angles_2):
+def remove_straight_angles(shadow, angles_1, angles_2) -> None:
     to_remove = []
     
     for i in range(len(angles_1)):
@@ -281,22 +283,7 @@ def remove_straight_angles(shadow, angles_1, angles_2):
         angles_2.pop(i)
 
 
-
-
-
-def magic() -> None:
-    img2 = cv.cvtColor(img.copy(), cv.COLOR_BGR2GRAY)
-    
-    img_canny = cv.Canny(img2, cv.getTrackbarPos('T1', 'Sliders'), cv.getTrackbarPos('T2', 'Sliders'))
-
-    kernel_size = 2
-    kernel = np.ones((kernel_size, kernel_size))
-    img_edges = cv.dilate(img_canny, kernel, iterations=1)
-
-    img3 = img.copy()
-
-    contours, _ = cv.findContours(img_edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-
+def contours_to_shadows(contours: list) -> list:
     shadows = []
 
     for c in contours:
@@ -304,7 +291,7 @@ def magic() -> None:
         if cv.contourArea(c) < cv.getTrackbarPos('Area', 'Sliders'):
             continue
         
-        cv.drawContours(img3, c, -1, (255, 0, 255), 2)
+        # cv.drawContours(img3, c, -1, (255, 0, 255), 2)
 
         accuracy = cv.getTrackbarPos('Corner Acc', 'Sliders')
         perimeter = cv.arcLength(c, True)
@@ -329,9 +316,26 @@ def magic() -> None:
         for sub_shadow in sub_shadows:
             shadows.append(sub_shadow)
 
-
     shadows = sort_shadow_edges(shadows)
 
+    return shadows
+
+
+
+def __find_shadow_features() -> None:
+    img2 = cv.cvtColor(img.copy(), cv.COLOR_BGR2GRAY)
+    
+    img_canny = cv.Canny(img2, cv.getTrackbarPos('T1', 'Sliders'), cv.getTrackbarPos('T2', 'Sliders'))
+
+    kernel_size = 2
+    kernel = np.ones((kernel_size, kernel_size))
+    img_edges = cv.dilate(img_canny, kernel, iterations=1)
+
+    img3 = img.copy()
+
+    contours, _ = cv.findContours(img_edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+
+    shadows = contours_to_shadows(contours)
 
     # Innenwinkel
     for shadow in shadows:
@@ -370,8 +374,11 @@ def magic() -> None:
     # show_img_and_check_close('Canny', img_canny)
     # show_img_and_check_close('Ronald', img_edges)
 
+
+
+
 while True:
-    magic()
+    __find_shadow_features()
     break
 
 while True:
