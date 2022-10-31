@@ -7,11 +7,11 @@ import numpy as np
 cv.namedWindow('Sliders')
 cv.createTrackbar('T1', 'Sliders', 280, 1000, lambda x: x)
 cv.createTrackbar('T2', 'Sliders', 800, 1000, lambda x: x)
-cv.createTrackbar('Area', 'Sliders', 50, 500, lambda x: x)
+cv.createTrackbar('Area', 'Sliders', 120, 500, lambda x: x)
 cv.createTrackbar('Corner Acc', 'Sliders', 20, 100, lambda x: x)
 
 
-img = cv.imread('img/shadow/ronald.png')
+img = cv.imread('img/shadow/ente.png')
 
 
 
@@ -92,13 +92,11 @@ def tri_wok(edges: list, start_vertex: str, current_vertex: str, split_vertices:
 
 
 def magic() -> None:
-    # TODO: ggf. Blur
-
     img2 = cv.cvtColor(img.copy(), cv.COLOR_BGR2GRAY)
     
     img_canny = cv.Canny(img2, cv.getTrackbarPos('T1', 'Sliders'), cv.getTrackbarPos('T2', 'Sliders'))
 
-    kernel_size = 1
+    kernel_size = 2
     kernel = np.ones((kernel_size, kernel_size))
     img_edges = cv.dilate(img_canny, kernel, iterations=1)
 
@@ -146,13 +144,6 @@ def magic() -> None:
 
             for idx in indexs:
                 corners[idx] = [x_sum, y_sum]
-
-
-
-        # Ecken markieren
-        for c in corners:
-            cv.circle(img3, c[0], 5, (0, 0, 0), -1)
-            cv.circle(img3, c[0], 4, (0, 255, 0), -1)
 
 
         # Kanten aus Eckpunkten generieren
@@ -224,8 +215,6 @@ def magic() -> None:
                                     edges.pop(ee_idx)
                                     break
 
-                        # TODO: close hole in edges
-
                         shadows.append(sub_shadow)
 
                         found_sub_shadow = True
@@ -266,7 +255,6 @@ def magic() -> None:
 
     # Innenwinkel
     for shadow in shadows_e:
-        print('\n\nDas ist mein Shadow. Er hat', len(shadow), 'Ecken:')
 
         # Die Namen der Variablen sind ein bisschen blöd gewählt
         # Wir können uns hier noch nicht sicher sein, welche Winkel
@@ -313,7 +301,28 @@ def magic() -> None:
                 if abs( perfect_angle - out_angles[i] ) <= 22.5:
                     out_angles[i] = perfect_angle
                     break
-            
+
+
+        # Ecken mit 180°-Winkeln entfernen
+        to_remove = []
+        for i in range(len(int_angles)):
+            if int_angles[i] == 180:
+                to_remove.append(i)
+        to_remove = to_remove[::-1]
+        for i in to_remove:
+            shadow.pop(i)
+            int_angles.pop(i)
+            out_angles.pop(i)
+
+        
+        # Ecken markieren
+        for c in shadow:
+            cv.circle(img3, c, 5, (0, 0, 0), -1)
+            cv.circle(img3, c, 4, (0, 255, 0), -1)
+
+    
+        print('\n\nDas ist mein Shadow. Er hat', len(shadow), 'Ecken:')        
+         
         # Innenwinkelsumme jedes Polygons kann mithilfe dieser Formel berechnet werden
         ideal_int_angle_count = ( len(shadow) - 2 ) * 180
 
@@ -326,8 +335,6 @@ def magic() -> None:
             print('Winkelsumme: ' + str(sum(out_angles)) + '°')
             print(out_angles)
 
-        # TODO: Ecken mit 180°-Winkel entfernen
-
 
                 
 
@@ -338,7 +345,6 @@ def magic() -> None:
 while True:
     magic()
     break
-
 
 while True:
     cv.waitKey(1)
