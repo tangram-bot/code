@@ -1,4 +1,3 @@
-from tkinter import E
 from typing import List, Tuple
 
 import numpy as np
