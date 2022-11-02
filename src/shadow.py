@@ -101,10 +101,9 @@ def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[ShadowE
 
     # Form zerlegen, falls möglich
     for start_vertex in split_vertices:
-        for e_idx in range(len(edges)):
+        for e_idx, edge in enumerate(edges):
             found_sub_shadow = False
 
-            edge = edges[e_idx]
             for i in range(2):
                 if edge.get(i) == start_vertex:
                     ee = edges.copy()
@@ -120,8 +119,7 @@ def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[ShadowE
 
                     # remove sub_shadow from edges
                     for ss_edge in sub_shadow:
-                        for ee_idx in range(len(edges)):
-                            eedge = edges[ee_idx]
+                        for ee_idx, eedge in enumerate(edges):
                             if edges_equal_direction_sensitive(eedge, ss_edge):
                                 edges.pop(ee_idx)
                                 break
@@ -158,9 +156,8 @@ def tri_wok(edges: list[Edge], start_vertex: Point, current_vertex: Point, split
             return None
 
     # weiter den Kanten folgen
-    for e_idx in range(len(edges)):
-        edge = edges[e_idx]
-
+    for e_idx, edge in enumerate(edges):
+        
         # Beide Endpunkte der Kante betrachten
         for i in range(2):
 
