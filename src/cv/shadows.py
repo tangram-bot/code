@@ -1,3 +1,22 @@
+from pyniryo import cv2
+import helper
+import logging
+
+
+L = logging.getLogger('CV-Shadows')
+
+
+def find_shadows(img) -> list:
+    pass
+
+
+
+
+
+
+# TODO: die paar Zeilen hier unten in den Rest vom Code integrieren :)
+
+
 import math
 from random import random
 from pyniryo import cv2 as cv, show_img_and_check_close
@@ -157,7 +176,7 @@ def tri_wok(edges: list[Edge], start_vertex: Point, current_vertex: Point, split
 
     # weiter den Kanten folgen
     for e_idx, edge in enumerate(edges):
-        
+
         # Beide Endpunkte der Kante betrachten
         for i in range(2):
 
@@ -381,10 +400,7 @@ def __find_shadow_features() -> None:
 
 
 
-
-while True:
-    __find_shadow_features()
-    break
+__find_shadow_features()
 
 while True:
     cv.waitKey(1)
