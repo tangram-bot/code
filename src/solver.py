@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from tangram import Block
+from model import Block
 
 
 L = logging.getLogger('Solver')

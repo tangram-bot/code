@@ -3,7 +3,7 @@ import math
 import numpy as np
 import cv.trackbar as tb
 from pyniryo import cv2, show_img_and_check_close
-from tangram import ShadowPoint, Point, Edge, ShadowEdge, edges_equal_direction_sensitive
+from model import ShadowPoint, Point, Edge, ShadowEdge, edges_equal_direction_sensitive
 from random import random
 
 
@@ -80,7 +80,6 @@ def __process_shadow_features(features: list[ShadowPoint], img) -> list:
             print(angles_2)
 
     return shadows
-
 
 
 
