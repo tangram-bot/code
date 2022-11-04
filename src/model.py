@@ -35,7 +35,7 @@ class Point:
     x: int
     y: int
 
-    def __init__(self, x, y) -> None:
+    def __init__(self, x: int, y: int) -> None:
         self.x = x
         self.y = y
     
@@ -64,7 +64,7 @@ class Edge:
     p1: Point
     p2: Point
 
-    def __init__(self, p1, p2) -> None:
+    def __init__(self, p1: Point, p2: Point) -> None:
         self.p1 = p1
         self.p2 = p2
 
@@ -101,6 +101,18 @@ class ShadowPoint:
     def __init__(self, points: list[Point]) -> None:
         self.points = points
 
+    def __str__(self) -> str:
+        str = 'ShadowPoint{ '
+        for p in self.points:
+            str += p.__str__()
+            str += ' '
+        str += '}'
+
+        return str
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class Polygon:
     vertices: List[Tuple[float, float]]
@@ -135,4 +147,4 @@ class Block(Polygon):
 
 class Shadow(Polygon):
     def __init__(self, vertices, interior_angles, area) -> None:
-        super().__init__(vertices, interior_angles, area)
+        super().__init__(vertices, interior_angles, area, (0, 0), 0)
