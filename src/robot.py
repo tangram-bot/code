@@ -79,8 +79,6 @@ def scan_blocks():
     if(bot == None): 
         return mock_image("blocks")
 
-    bot.arm.calibrate_auto()
-
     # move to scan position
     bot.arm.move_pose(SCAN_POSE_BLOCKS)
     bot.arm.move_pose(SCAN_POSE_BLOCKS) # maybe this fixes some issues with not recognizing the workspace, maybe not, has to be observed
@@ -93,8 +91,6 @@ def scan_blocks():
 def scan_shadow():
     if(bot == None):
         return mock_image("shadow")
-
-    bot.arm.calibrate_auto()
 
     bot.arm.move_pose(SCAN_POSE_SHADOW)
 
