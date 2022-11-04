@@ -2,7 +2,7 @@ import logging
 import math
 import numpy as np
 import helper
-import trackbar as tb
+import cv.trackbar as tb
 from typing import List, Tuple
 from pyniryo import cv2, show_img_and_check_close
 from helper import rotate_around_center, vector_angle

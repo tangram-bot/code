@@ -48,23 +48,17 @@ class Point:
     def __eq__(self, __o: object) -> bool:
         if(not isinstance(__o, Point)): 
             return False
-        return self.get_x() == __o.get_x() and self.get_y() == __o.get_y()
+        return self.x == __o.x and self.y == __o.y
 
     def __hash__(self) -> int:
         return hash(str(self))
-
-    def get_x(self) -> int:
-        return self.x
-
-    def get_y(self) -> int:
-        return self.y
 
     def to_cv_array(self) -> list:
         return np.array([self.x, self.y])
 
 
 def edges_equal_direction_sensitive(e1, e2) -> bool:
-    return e1.get_p1() == e2.get_p1() and e1.get_p2() == e2.get_p2()
+    return e1.p1 == e2.p1 and e1.p2 == e2.p2
 
 class Edge:
     p1: Point
@@ -80,12 +74,6 @@ class Edge:
     def __repr__(self) -> str:
         return self.__str__() 
     
-    def get_p1(self) -> Point:
-        return self.p1
-
-    def get_p2(self) -> Point:
-        return self.p2
-
     def get(self, index: int) -> Point:
         return self.p1 if index == 0 else self.p2
 
@@ -104,9 +92,6 @@ class ShadowEdge:
 
     def __init__(self, edges: list[Edge]) -> None:
         self.edges = edges
-    
-    def get_edges(self) -> list[Edge]:
-        return self.edges
 
 
 class ShadowPoint:
@@ -115,9 +100,7 @@ class ShadowPoint:
 
     def __init__(self, points: list[Point]) -> None:
         self.points = points
-    
-    def get_points(self) -> list[Point]:
-        return self.points
+
 
 class Polygon:
     vertices: List[Tuple[float, float]]
@@ -150,6 +133,6 @@ class Block(Polygon):
         pass
 
 
-# class Shadow(Polygon):
-#     def __init__(self, vertices) -> None:
-#         super().__init__(vertices)
+class Shadow(Polygon):
+    def __init__(self, vertices, interior_angles, area) -> None:
+        super().__init__(vertices, interior_angles, area)
