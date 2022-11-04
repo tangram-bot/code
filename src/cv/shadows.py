@@ -22,7 +22,7 @@ from random import random
 from pyniryo import cv2 as cv, show_img_and_check_close
 import numpy as np
 
-from tangram import Edge, Point, ShadowEdge, ShadowPoint, edges_equal_direction_sensitive
+from model import Edge, Point, ShadowEdge, ShadowPoint, edges_equal_direction_sensitive
 
 
 cv.namedWindow('Sliders')
