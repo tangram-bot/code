@@ -1,38 +1,96 @@
-from pyniryo import cv2
-import helper
 import logging
+import math
+import numpy as np
+import cv.trackbar as tb
+from pyniryo import cv2, show_img_and_check_close
+from tangram import ShadowPoint, Point, Edge, ShadowEdge, edges_equal_direction_sensitive
+from random import random
 
 
 L = logging.getLogger('CV-Shadows')
 
 
 def find_shadows(img) -> list:
-    pass
+    features = __find_shadow_features(img)
+    
+    L.debug('Found Features:')
+    L.debug(features)
+
+    shadows = __process_shadow_features(features, img)
+
+    show_img_and_check_close('Shadows', img)
+
+    return shadows
+
+
+def __find_shadow_features(img) -> list[ShadowPoint]:
+    img_gray = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2GRAY)
+    
+    threshold1 = cv2.getTrackbarPos(tb.TB_CANNY_1, tb.NW_SHADOW)
+    threshold2 = cv2.getTrackbarPos(tb.TB_CANNY_2, tb.NW_SHADOW)
+    img_canny = cv2.Canny(img_gray, threshold1, threshold2)
+
+    kernel_size = 2
+    kernel = np.ones((kernel_size, kernel_size))
+    img_edges = cv2.dilate(img_canny, kernel, iterations=1)
+
+    contours, _ = cv2.findContours(img_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    shadows = contours_to_shadows(contours)
+
+    return shadows
+
+
+def __process_shadow_features(features: list[ShadowPoint], img) -> list:
+    shadows = []
+
+    for shadow in features:
+        angles_1, angles_2 = calculate_angles(shadow)
+
+        fix_angles(angles_1)
+        fix_angles(angles_2)
+
+        remove_straight_angles(shadow, angles_1, angles_2)
+
+        # Ecken markieren
+        points = []
+        for c in shadow.get_points():
+            center = [int(c.get_x()), int(c.get_y())]
+            points.append(center)
+        hsv = np.uint8([[[ int(random() * 255), 255, 255 ]]])  
+        bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR).flatten()
+        bgr = (int(bgr[0]), int(bgr[1]), int(bgr[2]))
+        cv2.polylines(img, np.array([points]), True, bgr, 3)
+        for c in points:
+            cv2.circle(img, c, 5, (0, 0, 0), -1)
+            cv2.circle(img, c, 3, (255, 255, 255), -1)
+    
+        print('\n\nDas ist mein Shadow. Er hat', len(shadow.get_points()), 'Ecken:')        
+         
+        # Innenwinkelsumme jedes Polygons kann mithilfe dieser Formel berechnet werden
+        ideal_int_angle_count = ( len(shadow.get_points()) - 2 ) * 180
+
+        # Mit ideal_int_angle_count können wir hier schauen,
+        # was innen und was außen ist
+        if ideal_int_angle_count == sum(angles_1):
+            print('Winkelsumme: ' + str(sum(angles_1)) + '°')
+            print(angles_1)
+        else:
+            print('Winkelsumme: ' + str(sum(angles_2)) + '°')
+            print(angles_2)
+
+    return shadows
 
 
 
 
 
 
-# TODO: die paar Zeilen hier unten in den Rest vom Code integrieren :)
 
 
-import math
-from random import random
-from pyniryo import cv2 as cv, show_img_and_check_close
-import numpy as np
-
-from tangram import Edge, Point, ShadowEdge, ShadowPoint, edges_equal_direction_sensitive
-
-
-cv.namedWindow('Sliders')
-cv.createTrackbar('T1', 'Sliders', 280, 1000, lambda x: x)
-cv.createTrackbar('T2', 'Sliders', 800, 1000, lambda x: x)
-cv.createTrackbar('Area', 'Sliders', 120, 500, lambda x: x)
-cv.createTrackbar('Corner Acc', 'Sliders', 20, 100, lambda x: x)
-
-
-img = cv.imread('img/shadow/ronald.png')
+#==================#
+# HELPER FUNCTIONS #
+#==================#
 
 
 # Calculates and returns the distance between the points a and b
@@ -305,14 +363,14 @@ def contours_to_shadows(contours: list) -> list[ShadowPoint]:
 
     for c in contours:
 
-        if cv.contourArea(c) < cv.getTrackbarPos('Area', 'Sliders'):
+        if cv2.contourArea(c) < cv2.getTrackbarPos(tb.TB_CONT_AR, tb.NW_SHADOW):
             continue
         
         # cv.drawContours(img3, c, -1, (255, 0, 255), 2)
 
-        accuracy = cv.getTrackbarPos('Corner Acc', 'Sliders')
-        perimeter = cv.arcLength(c, True)
-        corners = cv.approxPolyDP(c, perimeter * 0.0001 * accuracy, False)
+        accuracy = cv2.getTrackbarPos(tb.TB_CORN_ACC, tb.NW_SHADOW)
+        perimeter = cv2.arcLength(c, True)
+        corners = cv2.approxPolyDP(c, perimeter * 0.0001 * accuracy, False)
         points = corners_to_points(corners)
 
         # Punkte mit ähnlichen Koordinaten zusammenfassen
@@ -337,70 +395,3 @@ def contours_to_shadows(contours: list) -> list[ShadowPoint]:
     shadows = sort_shadow_edges(shadows)
 
     return shadows
-
-
-
-def __find_shadow_features() -> None:
-    img2 = cv.cvtColor(img.copy(), cv.COLOR_BGR2GRAY)
-    
-    img_canny = cv.Canny(img2, cv.getTrackbarPos('T1', 'Sliders'), cv.getTrackbarPos('T2', 'Sliders'))
-
-    kernel_size = 2
-    kernel = np.ones((kernel_size, kernel_size))
-    img_edges = cv.dilate(img_canny, kernel, iterations=1)
-
-    img3 = img.copy()
-
-    contours, _ = cv.findContours(img_edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-
-    shadows = contours_to_shadows(contours)
-
-    # Innenwinkel
-    for shadow in shadows:
-        angles_1, angles_2 = calculate_angles(shadow)
-
-        fix_angles(angles_1)
-        fix_angles(angles_2)
-
-        remove_straight_angles(shadow, angles_1, angles_2)
-
-        # Ecken markieren
-        points = []
-        for c in shadow.get_points():
-            center = [int(c.get_x()), int(c.get_y())]
-            points.append(center)
-        hsv = np.uint8([[[ int(random() * 255), 255, 255 ]]])  
-        bgr = cv.cvtColor(hsv, cv.COLOR_HSV2BGR).flatten()
-        bgr = (int(bgr[0]), int(bgr[1]), int(bgr[2]))
-        cv.polylines(img3, np.array([points]), True, bgr, 3)
-        for c in points:
-            cv.circle(img3, c, 5, (0, 0, 0), -1)
-            cv.circle(img3, c, 3, (255, 255, 255), -1)
-    
-        print('\n\nDas ist mein Shadow. Er hat', len(shadow.get_points()), 'Ecken:')        
-         
-        # Innenwinkelsumme jedes Polygons kann mithilfe dieser Formel berechnet werden
-        ideal_int_angle_count = ( len(shadow.get_points()) - 2 ) * 180
-
-        # Mit ideal_int_angle_count können wir hier schauen,
-        # was innen und was außen ist
-        if ideal_int_angle_count == sum(angles_1):
-            print('Winkelsumme: ' + str(sum(angles_1)) + '°')
-            print(angles_1)
-        else:
-            print('Winkelsumme: ' + str(sum(angles_2)) + '°')
-            print(angles_2)
-
-
-                
-
-    show_img_and_check_close('Img', img3)
-    # show_img_and_check_close('Canny', img_canny)
-    # show_img_and_check_close('Ronald', img_edges)
-
-
-
-__find_shadow_features()
-
-while True:
-    cv.waitKey(1)

@@ -1,6 +1,6 @@
 from pyniryo import cv2
 import numpy as np
-import trackbar as tb
+import cv.trackbar as tb
 
 
 def blur(img, window_name):

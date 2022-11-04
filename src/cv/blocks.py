@@ -6,7 +6,7 @@ import trackbar as tb
 from typing import List, Tuple
 from pyniryo import cv2, show_img_and_check_close
 from helper import rotate_around_center, vector_angle
-from tangram import LENGTH_FACTOR, Block, Shadow, AREA_FACTOR, SHAPES
+from tangram import LENGTH_FACTOR, Block, AREA_FACTOR, SHAPES
 
 
 L = logging.getLogger('CV-Blocks')

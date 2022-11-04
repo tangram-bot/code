@@ -34,11 +34,9 @@ def create_trackbar_uis() -> None:
     cv2.createTrackbar(TB_DILATE_K, NW_BLOCKS,  1,      10,     lambda x: x)
     cv2.createTrackbar(TB_CONT_AR,  NW_BLOCKS,  200,    500,    lambda x: x)
     cv2.createTrackbar(TB_CORN_ACC, NW_BLOCKS,  5,      1000,   lambda x: x)
-
+    
     cv2.namedWindow(NW_SHADOW)
-    cv2.createTrackbar(TB_BLUR_K,   NW_SHADOW,  2,      10,     lambda x: x)
-    cv2.createTrackbar(TB_CANNY_1,  NW_SHADOW,  0,      255,    lambda x: x)
-    cv2.createTrackbar(TB_CANNY_2,  NW_SHADOW,  0,      255,    lambda x: x)
-    cv2.createTrackbar(TB_DILATE_K, NW_SHADOW,  1,      10,     lambda x: x)
-    cv2.createTrackbar(TB_CONT_AR,  NW_SHADOW,  200,    500,    lambda x: x)
-    cv2.createTrackbar(TB_CORN_ACC, NW_SHADOW,  5,      1000,   lambda x: x)
+    cv2.createTrackbar(TB_CANNY_1,  NW_SHADOW,  280,    1000,   lambda x: x)
+    cv2.createTrackbar(TB_CANNY_2,  NW_SHADOW,  800,    1000,   lambda x: x)
+    cv2.createTrackbar(TB_CONT_AR,  NW_SHADOW,  120,    500,    lambda x: x)
+    cv2.createTrackbar(TB_CORN_ACC, NW_SHADOW,  20,     100,    lambda x: x)

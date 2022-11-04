@@ -32,6 +32,8 @@ import robot
 import cv
 import solver
 
+from pyniryo import cv2
+
 
 L = logging.getLogger('Main')
 
@@ -49,8 +51,11 @@ def main() -> None:
     cv.create_trackbar_uis()
 
     # Procecss pictures & extract data
-    blocks = cv.find_blocks(img_blocks)
+    # blocks = cv.find_blocks(img_blocks)
     shadows = cv.find_shadows(img_shadow)
+
+    while True:
+        cv2.waitKey(1)
 
     # Find solution
     solution = solver.solve(blocks, shadows)
