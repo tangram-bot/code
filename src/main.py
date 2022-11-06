@@ -38,32 +38,33 @@ from pyniryo import cv2
 L = logging.getLogger('Main')
 
 
-def main():
+def main() -> None:
     L.info('HALLO!!')
 
     # Initialize & calibrate robot
     robot.init()
 
+    # Take pictures of blocks & shadow
     img_blocks = robot.scan_blocks()
-    # img_shadow = robot.scan_shadow()
+    img_shadow = robot.scan_shadow()
 
     cv.create_trackbar_uis()
 
-    # procecss picture & extract data
+    # Procecss pictures & extract data
     blocks = cv.find_blocks(img_blocks)
+    shadows = cv.find_shadows(img_shadow)
+
+    # Find solution
+    solution = solver.solve(blocks, shadows)
     
-    for b in blocks:
-        robot.pick(b.position[0] / 905, b.position[1] / 640)
-        robot.place(b.position[0] / 905, b.position[1] / 640, 0)
+    # TODO: Handling if no solution could be found
+    # if solution is None:
+    # ...
 
-    while True:
-        cv2.waitKey(1)
+    # TODO: Move blocks to correct positions
+    # robot.move_blocks(solution)
 
-    # find solution
-    solver.solve(blocks, shadow)
-    
-    # move blocks to correct positions
-
+    # We're done, the robot can go to sleep
     robot.shutdown()
 
 
