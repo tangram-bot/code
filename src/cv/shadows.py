@@ -41,11 +41,11 @@ def __find_shadow_features(img) -> list[ShadowPoint]:
     return shadows
 
 def __get_area(points: list[Point]) -> float:
-    sum = 0
+    accumulator = 0
     for i in range(len(points)):
-        sum += points[i].x * (points[(i+1) % len(points)].y - points[i-1].y)
+        accumulator += points[i].x * (points[(i+1) % len(points)].y - points[i-1].y)
 
-    area = abs(0.5 * sum)
+    area = abs(0.5 * accumulator)
     area_scaled = (area / 14290)
     area_rounded = round(area_scaled * 2) / 2
 
