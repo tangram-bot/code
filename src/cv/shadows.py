@@ -42,10 +42,14 @@ def __find_shadow_features(img) -> list[ShadowPoint]:
 
 def __get_area(points: list[Point]) -> float:
     sum = 0
-    for i in range(len(points) - 1):
-        sum += (points[i].y + points[i+1].y) * (points[i].x - points[i+1].x)
+    for i in range(len(points)):
+        sum += points[i].x * (points[(i+1) % len(points)].y - points[i-1].y)
 
-    return 0.5 * sum
+    area = abs(0.5 * sum)
+    area_scaled = (area / 14290)
+    area_rounded = round(area_scaled * 2) / 2
+
+    return area_rounded
 
 
 def __process_shadow_features(features: list[ShadowPoint], img) -> list[Shadow]:
@@ -82,7 +86,7 @@ def __process_shadow_features(features: list[ShadowPoint], img) -> list[Shadow]:
         L.debug('Anzahl Ecken=%d; Winkelsumme=%d°; Winkel=%s' % (len(shadow.points), ideal_int_angle_sum, interior_angles))
 
         area = __get_area(shadow.points)
-        print("area", area)
+        print(area)
 
         shadows.append(Shadow(shadow.points, interior_angles, area))
 
