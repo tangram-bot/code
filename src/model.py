@@ -102,13 +102,13 @@ class ShadowPoint:
         self.points = points
 
     def __str__(self) -> str:
-        str = 'ShadowPoint{ '
+        tmp = 'ShadowPoint{ '
         for p in self.points:
-            str += p.__str__()
-            str += ' '
-        str += '}'
+            tmp += p.__str__()
+            tmp += ' '
+        tmp += '}'
 
-        return str
+        return tmp
 
     def __repr__(self) -> str:
         return self.__str__()

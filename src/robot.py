@@ -3,13 +3,13 @@ import logging
 import os
 import random
 import numpy as np
+import pickle
 from pyniryo2 import NiryoRobot
 from pyniryo import uncompress_image, undistort_image, vision, cv2
 from math import pi
 from os import getenv
 from PIL import Image
-import pickle
-
+from exception import TangramException
 from main import get_run_env
 
 
@@ -110,7 +110,7 @@ def take_picture():
     ws = vision.extract_img_workspace(img, WORKSPACE_RATIO)
 
     if ws is None:
-        raise Exception('Could not extract workspace from image')
+        raise TangramException('Could not extract workspace from image')
 
     return ws
 
