@@ -1,7 +1,7 @@
 import logging
 import math
 import numpy as np
-import helper
+import cv.helper as cvh
 import cv.trackbar as tb
 from typing import List, Tuple
 from pyniryo import cv2, show_img_and_check_close
@@ -134,27 +134,27 @@ class BlockFeature:
 
 def __find_block_features(img) -> List[BlockFeature]:
     # Blur image to reduce noise
-    img_blur = helper.blur(img, tb.NW_BLOCKS)
+    img_blur = cvh.blur(img, tb.NW_BLOCKS)
     
     # Apply color mask to find colored areas
-    img_mask = helper.color_mask(img_blur, tb.NW_BLOCKS)
+    img_mask = cvh.color_mask(img_blur, tb.NW_BLOCKS)
     
     # Apply edge detection
-    img_edge = helper.find_edges(img_mask, tb.NW_BLOCKS)
+    img_edge = cvh.find_edges(img_mask, tb.NW_BLOCKS)
 
     features: List[BlockFeature] = []
 
-    for contour in helper.find_contours(img_edge):
+    for contour in cvh.find_contours(img_edge):
 
         # Skip if contour is too small
-        if helper.contour_too_small(contour, tb.NW_BLOCKS):
+        if cvh.contour_too_small(contour, tb.NW_BLOCKS):
             continue
 
         # Find corners of the contour
-        corners = helper.find_corners(contour, tb.NW_BLOCKS)
+        corners = cvh.find_corners(contour, tb.NW_BLOCKS)
 
         # Get the block's center
-        center = helper.get_center(corners)
+        center = cvh.get_center(corners)
 
         features.append(BlockFeature(corners, center, cv2.contourArea(contour)))
 
