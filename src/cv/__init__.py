@@ -1,3 +1,3 @@
-from .trackbar import create_trackbar_uis
+from .trackbar import VALUES
 from .blocks import find_blocks
 from .shadows import find_shadows

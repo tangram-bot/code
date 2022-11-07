@@ -10,11 +10,15 @@ import logging
 load_dotenv(find_dotenv())
 parser = argparse.ArgumentParser("env")
 parser.add_argument('-e', '--env', default="dev")
+parser.add_argument('-tb', '--trackbars', nargs='?', const='')
 
 args = parser.parse_args()
 
 def get_run_env():
     return args.env
+
+def show_trackbars():
+    return args.trackbars is not None
 
 logLevels={
     'prod': logging.INFO,
@@ -47,8 +51,6 @@ def main() -> None:
     # Take pictures of blocks & shadow
     img_blocks = robot.scan_blocks()
     img_shadow = robot.scan_shadow()
-
-    cv.create_trackbar_uis()
 
     # Procecss pictures & extract data
     blocks = cv.find_blocks(img_blocks)

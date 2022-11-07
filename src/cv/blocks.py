@@ -1,7 +1,6 @@
 import logging
 import math
 import numpy as np
-import cv.helper as cvh
 import cv.trackbar as tb
 from typing import List, Tuple
 from pyniryo import cv2, show_img_and_check_close
@@ -134,27 +133,27 @@ class BlockFeature:
 
 def __find_block_features(img) -> List[BlockFeature]:
     # Blur image to reduce noise
-    img_blur = cvh.blur(img, tb.NW_BLOCKS)
+    img_blur = blur(img)
     
     # Apply color mask to find colored areas
-    img_mask = cvh.color_mask(img_blur, tb.NW_BLOCKS)
+    img_mask = color_mask(img_blur)
     
     # Apply edge detection
-    img_edge = cvh.find_edges(img_mask, tb.NW_BLOCKS)
+    img_edge = find_edges(img_mask)
 
     features: List[BlockFeature] = []
 
-    for contour in cvh.find_contours(img_edge):
+    for contour in find_contours(img_edge):
 
         # Skip if contour is too small
-        if cvh.contour_too_small(contour, tb.NW_BLOCKS):
+        if contour_too_small(contour):
             continue
 
         # Find corners of the contour
-        corners = cvh.find_corners(contour, tb.NW_BLOCKS)
+        corners = find_corners(contour)
 
         # Get the block's center
-        center = cvh.get_center(corners)
+        center = get_center(corners)
 
         features.append(BlockFeature(corners, center, cv2.contourArea(contour)))
 
@@ -290,6 +289,85 @@ def __process_large_triangle(feature: BlockFeature, img) -> Block:
 
 
 
+#=====================#
+# CV HELPER FUNCTIONS #
+#=====================#
+
+def blur(img):
+    kernel_size = tb.VALUES.B_BLUR_KERNEL * 2 + 1
+    
+    blur_kernel = (kernel_size, kernel_size)
+
+    img_blurred = cv2.GaussianBlur(img, blur_kernel, 1)
+
+    return img_blurred
+
+
+def color_mask(img):
+    lower_h = tb.VALUES.B_MASK_LOWER_H
+    lower_s = tb.VALUES.B_MASK_LOWER_S
+    lower_v = tb.VALUES.B_MASK_LOWER_V
+    upper_h = tb.VALUES.B_MASK_UPPER_H
+    upper_s = tb.VALUES.B_MASK_UPPER_S
+    upper_v = tb.VALUES.B_MASK_UPPER_V
+
+    lower = (lower_h, lower_s, lower_v)
+    upper = (upper_h, upper_s, upper_v)
+
+    img_masked = cv2.inRange(img, lower, upper)
+
+    return img_masked
+
+
+def find_edges(img):
+    threshold_1 = tb.VALUES.B_CANNY_1
+    threshold_2 = tb.VALUES.B_CANNY_2
+
+    img_canny = cv2.Canny(img, threshold_1, threshold_2)
+    
+    kernel_size = tb.VALUES.B_DILATE_K_SIZE
+    kernel = np.ones((kernel_size, kernel_size))
+    img_edges = cv2.dilate(img_canny, kernel, iterations=1)
+
+    return img_edges
+
+
+def find_contours(img):
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    return contours
+
+
+def contour_too_small(contour):
+    area = cv2.contourArea(contour)
+
+    return area < tb.VALUES.B_MIN_CONTOUR_AREA
+
+
+def find_corners(contour):
+    accuracy = tb.VALUES.B_CORNER_ACCURACY
+
+    perimeter = cv2.arcLength(contour, True)
+
+    corners = cv2.approxPolyDP(contour, perimeter * 0.01 * accuracy, True)
+
+    return corners
+
+
+def get_center(corners):
+    x_sum = 0
+    y_sum = 0
+    
+    for corner in corners:
+        x_sum += corner[0][0]
+        y_sum += corner[0][1]
+
+    num_corners = len(corners)
+
+    x_sum //= num_corners
+    y_sum //= num_corners
+
+    return (x_sum, y_sum)
 
 
 

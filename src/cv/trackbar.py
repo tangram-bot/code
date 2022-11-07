@@ -1,42 +1,70 @@
 from pyniryo import cv2
+from main import show_trackbars
+
+
+def create_window(window_name: str) -> None:
+    if not show_trackbars():
+        return
+        
+    cv2.namedWindow(window_name)
+
+
+def create_trackbar(window_name: str, trackbar_name: str, val_name: str, max_value: int) -> None:
+    if not show_trackbars():
+        return
+
+    cv2.createTrackbar(trackbar_name, window_name, VALUES.__getattribute__(val_name), max_value, lambda new_value: update_value(val_name, new_value))
+
+
+def update_value(val_name: str, new_value: int) -> None:
+    VALUES.__setattr__(val_name, new_value)
+
 
 
 # Window Names
 NW_BLOCKS = 'CV: Blocks'
 NW_SHADOW = 'CV: Shadow'
 
-# Trackbar Names
-TB_BLUR_K = 'Blur Kernel'
-TB_MASK_L_H = 'Mask Lower H'
-TB_MASK_L_S = 'Mask Lower S'
-TB_MASK_L_V = 'Mask Lower V'
-TB_MASK_U_H = 'Mask Upper H'
-TB_MASK_U_S = 'Mask Upper S'
-TB_MASK_U_V = 'Mask Upper V'
-TB_CANNY_1 = 'Canny 1'
-TB_CANNY_2 = 'Canny 2'
-TB_DILATE_K = 'Dilate Kernel'
-TB_CONT_AR = 'Min Contour Area'
-TB_CORN_ACC = 'Corner Accuracy'
+class Values:
+    B_BLUR_KERNEL = 1
+    B_MASK_LOWER_H = 0
+    B_MASK_LOWER_S = 0
+    B_MASK_LOWER_V = 30
+    B_MASK_UPPER_H = 115
+    B_MASK_UPPER_S = 255
+    B_MASK_UPPER_V = 255
+    B_CANNY_1 = 0
+    B_CANNY_2 = 0
+    B_DILATE_K_SIZE = 1
+    B_MIN_CONTOUR_AREA = 200
+    B_CORNER_ACCURACY = 5
+
+    S_CANNY_1 = 280
+    S_CANNY_2 = 800
+    S_MIN_CONTOUR_AREA = 120
+    S_CORNER_ACCURACY = 20
+
+VALUES = Values()
 
 
-def create_trackbar_uis() -> None:
-    cv2.namedWindow(NW_BLOCKS)
-    cv2.createTrackbar(TB_BLUR_K,   NW_BLOCKS,  1,      10,     lambda x: x)
-    cv2.createTrackbar(TB_MASK_L_H, NW_BLOCKS,  0,      255,    lambda x: x)
-    cv2.createTrackbar(TB_MASK_L_S, NW_BLOCKS,  0,      255,    lambda x: x)
-    cv2.createTrackbar(TB_MASK_L_V, NW_BLOCKS,  30,     255,    lambda x: x)
-    cv2.createTrackbar(TB_MASK_U_H, NW_BLOCKS,  115,    255,    lambda x: x)
-    cv2.createTrackbar(TB_MASK_U_S, NW_BLOCKS,  255,    255,    lambda x: x)
-    cv2.createTrackbar(TB_MASK_U_V, NW_BLOCKS,  255,    255,    lambda x: x)
-    cv2.createTrackbar(TB_CANNY_1,  NW_BLOCKS,  0,      255,    lambda x: x)
-    cv2.createTrackbar(TB_CANNY_2,  NW_BLOCKS,  0,      255,    lambda x: x)
-    cv2.createTrackbar(TB_DILATE_K, NW_BLOCKS,  1,      10,     lambda x: x)
-    cv2.createTrackbar(TB_CONT_AR,  NW_BLOCKS,  200,    500,    lambda x: x)
-    cv2.createTrackbar(TB_CORN_ACC, NW_BLOCKS,  5,      1000,   lambda x: x)
-    
-    cv2.namedWindow(NW_SHADOW)
-    cv2.createTrackbar(TB_CANNY_1,  NW_SHADOW,  280,    1000,   lambda x: x)
-    cv2.createTrackbar(TB_CANNY_2,  NW_SHADOW,  800,    1000,   lambda x: x)
-    cv2.createTrackbar(TB_CONT_AR,  NW_SHADOW,  120,    500,    lambda x: x)
-    cv2.createTrackbar(TB_CORN_ACC, NW_SHADOW,  20,     100,    lambda x: x)
+
+
+create_window(NW_BLOCKS)
+create_trackbar(NW_BLOCKS, 'Blur Kernel',       'B_BLUR_KERNEL',        10)
+create_trackbar(NW_BLOCKS, 'Mask Lower H',      'B_MASK_LOWER_H',       255)
+create_trackbar(NW_BLOCKS, 'Mask Lower S',      'B_MASK_LOWER_S',       255)
+create_trackbar(NW_BLOCKS, 'Mask Lower V',      'B_MASK_LOWER_V',       255)
+create_trackbar(NW_BLOCKS, 'Mask Upper H',      'B_MASK_UPPER_H',       255)
+create_trackbar(NW_BLOCKS, 'Mask Upper S',      'B_MASK_UPPER_S',       255)
+create_trackbar(NW_BLOCKS, 'Mask Upper V',      'B_MASK_UPPER_V',       255)
+create_trackbar(NW_BLOCKS, 'Canny 1',           'B_CANNY_1',            255)
+create_trackbar(NW_BLOCKS, 'Canny 2',           'B_CANNY_2',            255)
+create_trackbar(NW_BLOCKS, 'Dilate Kernel',     'B_DILATE_K_SIZE',      10)
+create_trackbar(NW_BLOCKS, 'Min Contour Area',  'B_MIN_CONTOUR_AREA',   500)
+create_trackbar(NW_BLOCKS, 'Corner Accuracy',   'B_CORNER_ACCURACY',    1000)
+
+create_window(NW_SHADOW)
+create_trackbar(NW_SHADOW, 'Canny 1',           'S_CANNY_1',            1000)
+create_trackbar(NW_SHADOW, 'Canny 2',           'S_CANNY_2',            1000)
+create_trackbar(NW_SHADOW, 'Min Contour Area',  'S_MIN_CONTOUR_AREA',   500)
+create_trackbar(NW_SHADOW, 'Corner Accuracy',   'S_CORNER_ACCURACY',    100)
