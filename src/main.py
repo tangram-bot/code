@@ -67,6 +67,9 @@ def main() -> None:
     # We're done, the robot can go to sleep
     robot.shutdown()
 
+    while True:
+        cv2.waitKey(1)
+
 
 if __name__ == '__main__':
     main()
