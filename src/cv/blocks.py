@@ -20,7 +20,7 @@ def find_blocks(img) -> List[Block]:
 
     blocks = __process_block_features(features, img)
 
-    show_img_and_check_close('After Processing', img)
+    # show_img_and_check_close('After Processing', img)
 
     for block in blocks:
         x = block.vertices.copy()
@@ -55,7 +55,7 @@ def find_blocks(img) -> List[Block]:
         cv2.circle(img, block.position, 5, (100, 100, 100), -1)
 
 
-    show_img_and_check_close('TEST', img)
+    show_img_and_check_close('Blocks', img)
 
     return blocks
 
@@ -165,7 +165,7 @@ def __find_block_features(img) -> List[BlockFeature]:
         __draw_contour_info(img, contour, corners)
 
 
-    show_img_and_check_close('Blocks: Color Mask', img_mask)
+    # show_img_and_check_close('Blocks: Color Mask', img_mask)
 
     return features
 
