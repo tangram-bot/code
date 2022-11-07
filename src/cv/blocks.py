@@ -260,7 +260,7 @@ def __process_medium_triangle(feature: BlockFeature, img) -> Block:
 
     # Fix rotation > 180°
     cross = np.cross((ref_vertex-feature.center), (0, 1))
-    if cross > 0: # TODO: check if needs to be < 0
+    if cross > 0:
         angle = 360 - angle
     
     cv2.line(img, feature.center, ref_vertex[0], (255, 0, 0), 3)
