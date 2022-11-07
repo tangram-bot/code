@@ -16,3 +16,10 @@ Im Anschluss kann der Code über folgenden Befehl ausgeführt werden:
 ```bash
 python src/main.py -e prod
 ```
+
+### Argumente
+
+| Kurzform | Langform  | Beschreibung | Werte | Default |
+|----------|-----------|--------------|-------|---------|
+|-e        | --env       | Mit Roboter verbinden oder Mock-Bilder zum Testen nutzen? | `dev` - Mock-Bilder nutzen <br>`prod` - mit Roboter verbinden | `dev`
+|-tb       | --trackbars | Config-Fenster mit Slidern sichtbar machen | gesetzt/nicht gesetzt | nicht gesetzt |

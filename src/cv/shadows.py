@@ -26,8 +26,8 @@ def find_shadows(img) -> list[Shadow]:
 def __find_shadow_features(img) -> list[ShadowPoint]:
     img_gray = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2GRAY)
     
-    threshold1 = cv2.getTrackbarPos(tb.TB_CANNY_1, tb.NW_SHADOW)
-    threshold2 = cv2.getTrackbarPos(tb.TB_CANNY_2, tb.NW_SHADOW)
+    threshold1 = tb.VALUES.S_CANNY_1
+    threshold2 = tb.VALUES.S_CANNY_2
     img_canny = cv2.Canny(img_gray, threshold1, threshold2)
 
     kernel_size = 2
@@ -107,10 +107,10 @@ def contours_to_shadows(contours: list) -> list[ShadowPoint]:
 
     for c in contours:
 
-        if cv2.contourArea(c) < cv2.getTrackbarPos(tb.TB_CONT_AR, tb.NW_SHADOW):
+        if cv2.contourArea(c) < tb.VALUES.S_MIN_CONTOUR_AREA:
             continue
 
-        accuracy = cv2.getTrackbarPos(tb.TB_CORN_ACC, tb.NW_SHADOW)
+        accuracy = tb.VALUES.S_CORNER_ACCURACY
         perimeter = cv2.arcLength(c, True)
         corners = cv2.approxPolyDP(c, perimeter * 0.0001 * accuracy, False)
         points = corners_to_points(corners)
