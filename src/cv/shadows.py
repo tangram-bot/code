@@ -83,10 +83,9 @@ def __process_shadow_features(features: list[ShadowPoint], img) -> list[Shadow]:
 
         interior_angles = angles_1 if (ideal_int_angle_sum == sum(angles_1)) else angles_2
 
-        L.debug('Anzahl Ecken=%d; Winkelsumme=%d°; Winkel=%s' % (len(shadow.points), ideal_int_angle_sum, interior_angles))
-
         area = __get_area(shadow.points)
-        print(area)
+
+        L.debug('Anzahl Ecken=%d; Winkelsumme=%d°; Winkel=%s; Fläche=%f' % (len(shadow.points), ideal_int_angle_sum, interior_angles, area))
 
         shadows.append(Shadow(shadow.points, interior_angles, area))
 
