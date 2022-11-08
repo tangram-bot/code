@@ -3,3 +3,4 @@ pillow==9.2.0
 pyniryo==1.1.2
 pyniryo2==1.0.0
 python-dotenv==0.21.0
+sympy==1.11.1

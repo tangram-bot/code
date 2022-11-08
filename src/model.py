@@ -1,6 +1,8 @@
 from typing import List, Tuple
 
+import math
 import numpy as np
+from sympy import Eq, solve, Symbol
 
 
 AREA_FACTOR = 16000
@@ -56,9 +58,9 @@ class Point:
     def to_cv_array(self) -> list:
         return np.array([self.x, self.y])
 
+    def get(self, index) -> int:
+        return self.x if index == 0 else self.y
 
-def edges_equal_direction_sensitive(e1, e2) -> bool:
-    return e1.p1 == e2.p1 and e1.p2 == e2.p2
 
 class Edge:
     p1: Point
@@ -85,6 +87,55 @@ class Edge:
     
     def __hash__(self) -> int:
         return hash(str(self))
+
+    def intersects_with(self, edge2) -> bool:
+        if(not isinstance(edge2, Edge)): 
+            return False
+
+        angle = angle_between_edges(self, edge2)
+
+        if(angle < 0.01):
+            return False
+
+        intersect_points = edges_intersect_point(self, edge2)
+        results = [False, False]
+        for i in range(intersect_points):
+            results[i] = not( intersect_points[i] < 0.01 or intersect_points[i] > 0.99)
+
+        return results[0] and results[1]
+
+def edges_equal_direction_sensitive(e1: Edge, e2: Edge) -> bool:
+    return e1.p1 == e2.p1 and e1.p2 == e2.p2
+
+def angle_between_edges(e1: Edge, e2: Edge) -> float:
+    a = e1.p1.to_cv_array()
+    b = e2.p1.to_cv_array()
+
+    a = a - e1.p2.to_cv_array()
+    b = b - e2.p2.to_cv_array()
+
+    dot_prod = np.dot(a, b)
+    len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
+
+    angle = math.acos(dot_prod / len_prod)
+    angle = math.degrees(angle)
+
+def edges_intersect_point(e1: Edge, e2: Edge):
+    factors = []
+    v1 = e1.p2.to_cv_array() - e1.p1.to_cv_array()
+    v2 = e2.p2.to_cv_array() - e2.p1.to_cv_array()
+
+    equations = []
+
+    param1 = Symbol("x")
+    param2 = Symbol("y")
+
+    for i in range(2):
+        equation = Eq((v1[0][i] * param1 + v2[0][i] * param2), (e1.p1.get(i) - e2.p1.get(i)))
+        equations.append(equation)
+    
+    result = solve(equations, (param1, param2))
+    return result["x"], result["y"]
 
 class ShadowEdge:
     
