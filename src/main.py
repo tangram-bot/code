@@ -57,14 +57,14 @@ def main() -> None:
     shadows = cv.find_shadows(img_shadow)
 
     # Find solution
-    solution = solver.solve(blocks, shadows)
+    instructions = solver.solve(blocks, shadows)
     
     # TODO: Handling if no solution could be found
-    # if solution is None:
+    # if instructions is None:
     # ...
 
     # TODO: Move blocks to correct positions
-    # robot.move_blocks(solution)
+    # robot.move_blocks(instructions)
 
     # We're done, the robot can go to sleep
     robot.shutdown()
