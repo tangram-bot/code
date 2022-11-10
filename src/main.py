@@ -37,6 +37,7 @@ import cv
 import solver
 
 from pyniryo import cv2
+import numpy as np
 
 
 L = logging.getLogger('Main')
@@ -58,6 +59,12 @@ def main() -> None:
 
     # Find solution
     instructions = solver.solve(blocks, shadows)
+
+    # img_solution = img_shadow.copy()
+    # for i in instructions:
+    #     print(i.block.vertices)
+    #     cv2.fillPoly(img_solution, pts=np.array([i.block.get_scaled_vertices(i.position)]), color=(255, 0, 0))
+    # cv2.imshow('Solution', img_solution)
     
     # TODO: Handling if no solution could be found
     # if instructions is None:

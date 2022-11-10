@@ -1,46 +1,32 @@
-from typing import List, Tuple
-
 import math
 import numpy as np
 from sympy import Eq, solve, Symbol
 
 
+# Umrechnungsfaktoren zwischen Bildern und unseren Modellen
 AREA_FACTOR = 16000
 LENGTH_FACTOR = 123
 
 
-class Shape:
-    vertices: List[Tuple[float, float]]
-    interior_angles: List[float]
-    area: float
 
-    def __init__(self, vertices: List[Tuple[float, float]], interior_angles: List[float], area: float) -> None:
-        self.vertices = vertices
-        self.interior_angles = interior_angles
-        self.area = area
-
-
-SHAPES: dict[str, Shape] = {
-    # Square
-    'SQ': Shape([(0, 0), (1, 0), (1, 1), (0, 1)], [90, 90, 90, 90], 1),
-    # Small Triangle
-    'ST': Shape([(0, 0), (1, 0), (0, 1)], [90, 45, 45], 0.5),
-    # Medium Triangle
-    'MT': Shape([(0, 0), (2, 0), (1, 1)], [45, 45, 90], 1),
-    # Large Triangle
-    'LT': Shape([(0, 0), (2, 0), (0, 2)], [90, 45, 45], 2),
-    # Paralleogram
-    'PA': Shape([(0, 0), (1, 1), (1, 2), (0, 1)], [45, 135, 45, 135], 1),
-}
 
 class Point:
     x: int
     y: int
 
     def __init__(self, x: int, y: int) -> None:
-        self.x = x
-        self.y = y
-    
+        self.x = int(x)
+        self.y = int(y)
+
+    def to_np_array(self):
+        return np.array([self.x, self.y])
+
+    def get(self, index: int) -> int:
+        return self.x if index == 0 else self.y
+
+    def copy(self):
+        return Point(self.x, self.y)
+
     def __str__(self) -> str:
         return f"Point(x={self.x}, y={self.y})"
 
@@ -55,11 +41,114 @@ class Point:
     def __hash__(self) -> int:
         return hash(str(self))
 
-    def to_cv_array(self) -> list:
-        return np.array([self.x, self.y])
 
-    def get(self, index) -> int:
-        return self.x if index == 0 else self.y
+class Polygon:
+    vertices: list[Point]
+    interior_angles: list[float]
+    area: float
+
+    def __init__(self, vertices: list[Point], interior_angles: list[float], area: float) -> None:
+        self.vertices = vertices
+        self.interior_angles = interior_angles
+        self.area = area
+
+    def to_np_array(self):
+        return [v.to_np_array() for v in self.vertices]
+
+    def get_center(self, offset=Point(0, 0)) -> Point:
+        center = offset.copy()
+
+        for v in self.vertices:
+            center.x += v.x
+            center.y += v.y
+
+        center.x //= len(self.vertices)
+        center.y //= len(self.vertices)
+
+        return center
+
+    def get_scaled_vertices(self, offset=Point(0, 0)) -> list[Point]:
+        vertices: list[Point] = []
+
+        for v in self.vertices:
+            vertices.append(Point(v.x * LENGTH_FACTOR + offset.x, v.y * LENGTH_FACTOR + offset.y))
+
+        return vertices
+
+    def __str__(self) -> str:
+        return f'Polygon(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area})'
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class Block(Polygon):
+    center: Point
+    rotation: float
+    
+    def __init__(self, vertices: list[Point], interior_angles: list[float], area: float, center: Point, rotation: float) -> None:
+        super().__init__(vertices, interior_angles, area)
+
+        self.center = center
+        self.rotation = rotation
+
+
+    def get_rotated_vertices(self, center: Point=None, angle: float=None) -> list[Point]:
+        """
+        Dreht den Block um einen Punkt
+        Falls kein Punkt angegeben wird, wird der Mittelpunkt des Block genutzt
+        Falls kein Winkel angegeben wird, wird die Drehung des Blocks genutzt
+        """
+
+        if center is None:
+            center = self.center
+
+        if angle is None:
+            angle = self.rotation
+        
+        rads = math.radians(self.rotation)
+        cos = math.cos(rads)
+        sin = math.sin(rads)
+
+        new_vertices: list[Point] = []
+
+        for v in self.vertices:
+            old_x = v.x - center.x
+            old_y = v.y - center.y
+
+            new_x = old_x * cos - old_y * sin + center.x
+            new_y = old_x * sin + old_y * cos + center.y
+
+            new_vertices.append(Point(new_x, new_y))
+
+        return new_vertices
+
+    def __str__(self) -> str:
+        return f'Block(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area}, position={self.center}, rotation={self.rotation})'
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class Shadow(Polygon):
+
+    def __init__(self, vertices: list[Point], interior_angles: list[float], area: float) -> None:
+        super().__init__(vertices, interior_angles, area)
+
+    def __str__(self) -> str:
+        return f'Shadow(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area})'
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+
+
+
+
+
+
+
 
 
 class Edge:
@@ -70,23 +159,9 @@ class Edge:
         self.p1 = p1
         self.p2 = p2
 
-    def __str__(self) -> str:
-        return f"Edge(p1={self.p1}, p2={self.p2})"
 
-    def __repr__(self) -> str:
-        return self.__str__() 
-    
     def get(self, index: int) -> Point:
         return self.p1 if index == 0 else self.p2
-
-    def __eq__(self, __o: object) -> bool:
-        if(not isinstance(__o, Edge)): 
-            return False
-        
-        return edges_equal_direction_sensitive(self, __o) or edges_equal_direction_sensitive(__o, self)
-    
-    def __hash__(self) -> int:
-        return hash(str(self))
 
     def intersects_with(self, edge2) -> bool:
         if(not isinstance(edge2, Edge)): 
@@ -104,15 +179,32 @@ class Edge:
 
         return results[0] and results[1]
 
+
+    def __str__(self) -> str:
+        return f"Edge(p1={self.p1}, p2={self.p2})"
+
+    def __repr__(self) -> str:
+        return self.__str__() 
+    
+    def __eq__(self, __o: object) -> bool:
+        if(not isinstance(__o, Edge)): 
+            return False
+        
+        return edges_equal_direction_sensitive(self, __o) or edges_equal_direction_sensitive(__o, self)
+    
+    def __hash__(self) -> int:
+        return hash(str(self))
+
+
 def edges_equal_direction_sensitive(e1: Edge, e2: Edge) -> bool:
     return e1.p1 == e2.p1 and e1.p2 == e2.p2
 
 def angle_between_edges(e1: Edge, e2: Edge) -> float:
-    a = e1.p1.to_cv_array()
-    b = e2.p1.to_cv_array()
+    a = e1.p1.to_np_array()
+    b = e2.p1.to_np_array()
 
-    a = a - e1.p2.to_cv_array()
-    b = b - e2.p2.to_cv_array()
+    a = a - e1.p2.to_np_array()
+    b = b - e2.p2.to_np_array()
 
     dot_prod = np.dot(a, b)
     len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
@@ -121,9 +213,8 @@ def angle_between_edges(e1: Edge, e2: Edge) -> float:
     angle = math.degrees(angle)
 
 def edges_intersect_point(e1: Edge, e2: Edge):
-    factors = []
-    v1 = e1.p2.to_cv_array() - e1.p1.to_cv_array()
-    v2 = e2.p2.to_cv_array() - e2.p1.to_cv_array()
+    v1 = e1.p2.to_np_array() - e1.p1.to_np_array()
+    v2 = e2.p2.to_np_array() - e2.p1.to_np_array()
 
     equations = []
 
@@ -136,66 +227,3 @@ def edges_intersect_point(e1: Edge, e2: Edge):
     
     result = solve(equations, (param1, param2))
     return result["x"], result["y"]
-
-class ShadowEdge:
-    
-    edges: list[Edge]
-
-    def __init__(self, edges: list[Edge]) -> None:
-        self.edges = edges
-
-
-class ShadowPoint:
-    
-    points: list[Point]
-
-    def __init__(self, points: list[Point]) -> None:
-        self.points = points
-
-    def __str__(self) -> str:
-        tmp = 'ShadowPoint{ '
-        for p in self.points:
-            tmp += p.__str__()
-            tmp += ' '
-        tmp += '}'
-
-        return tmp
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
-class Polygon:
-    vertices: List[Tuple[float, float]]
-    interior_angles: List[float]
-    area: float
-
-    position: Tuple[float, float]
-    rotation: float
-
-    def __init__(self, vertices: List[Tuple[float, float]], interior_angles: List[float], area: float, position: Tuple[float, float], rotation: float) -> None:
-        self.vertices = vertices
-        self.interior_angles = interior_angles
-        self.area = area
-
-        self.position = position
-        self.rotation = rotation
-
-    def __str__(self) -> str:
-        return 'Polygon(vertices=%s, interior_angles=%s, area=%f, position=%s, rotation=%f)' % (self.vertices, self.interior_angles, self.area, self.position, self.rotation)
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
-class Block(Polygon):
-    def __init__(self, shape: Shape, position: Tuple[float, float], rotation: float) -> None:
-        super().__init__(shape.vertices, shape.interior_angles, shape.area, position, rotation)
-
-    def get_rotated_vertices(self):
-        pass
-
-
-class Shadow(Polygon):
-    def __init__(self, vertices, interior_angles, area) -> None:
-        super().__init__(vertices, interior_angles, area, (0, 0), 0)
