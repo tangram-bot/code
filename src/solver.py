@@ -53,7 +53,6 @@ def __check_plain_blocks(blocks: list[Block], shadows: list[Shadow]) -> list[Mov
 
                 print('Exact match:', block)
 
-                print('AAAA', shadow.vertices[0])
                 instructions.append(MoveInstruction(
                     block=      block,
                     position=   shadow.get_center(),

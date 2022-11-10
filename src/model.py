@@ -5,6 +5,7 @@ from sympy import Eq, solve, Symbol
 
 # Umrechnungsfaktoren zwischen Bildern und unseren Modellen
 AREA_FACTOR = 16000
+AREA_FACTOR_SHADOW = 14290
 LENGTH_FACTOR = 123
 
 

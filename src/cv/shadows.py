@@ -3,9 +3,9 @@ import math
 import numpy as np
 import cv.trackbar as tb
 from pyniryo import cv2, show_img_and_check_close
-from model import Point, Edge, Shadow, edges_equal_direction_sensitive
+from model import Point, Edge, Shadow, edges_equal_direction_sensitive, AREA_FACTOR_SHADOW
 from random import random
-from features import ShadowFeature
+from cv.features import ShadowFeature
 
 
 L = logging.getLogger('CV-Shadows')
@@ -47,7 +47,7 @@ def __get_area(points: list[Point]) -> float:
         accumulator += points[i].x * (points[(i+1) % len(points)].y - points[i-1].y)
 
     area = abs(0.5 * accumulator)
-    area_scaled = (area / 14290)
+    area_scaled = area / AREA_FACTOR_SHADOW
     area_rounded = round(area_scaled * 2) / 2
 
     return area_rounded
@@ -65,7 +65,7 @@ def __process_shadow_features(features: list[ShadowFeature], img) -> list[Shadow
         remove_straight_angles(shadow, angles_1, angles_2)
 
 
-        # Ecken markieren
+        # Ecken markieren TODO: auslagern
         points = []
         for c in shadow.points:
             center = [int(c.x), int(c.y)]
