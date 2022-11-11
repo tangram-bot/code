@@ -85,7 +85,7 @@ def __get_block_rotation(shadow: Shadow, block: Block) -> float:
 
 
 def __get_angle_square(shadow: Shadow) -> float:
-    ref_vertex: Point = None
+    ref_vertex = None
 
     for v in shadow.vertices:
         if ref_vertex is None or v.y < ref_vertex.y:
