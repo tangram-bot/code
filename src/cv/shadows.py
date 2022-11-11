@@ -3,8 +3,9 @@ import math
 import numpy as np
 import cv.trackbar as tb
 from pyniryo import cv2, show_img_and_check_close
-from model import ShadowPoint, Point, Edge, ShadowEdge, Shadow, edges_equal_direction_sensitive
+from model import Point, Edge, Shadow, edges_equal_direction_sensitive, AREA_FACTOR_SHADOW
 from random import random
+from cv.features import ShadowFeature
 
 
 L = logging.getLogger('CV-Shadows')
@@ -23,7 +24,7 @@ def find_shadows(img) -> list[Shadow]:
     return shadows
 
 
-def __find_shadow_features(img) -> list[ShadowPoint]:
+def __find_shadow_features(img) -> list[ShadowFeature]:
     img_gray = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2GRAY)
     
     threshold1 = tb.VALUES.S_CANNY_1
@@ -46,13 +47,13 @@ def __get_area(points: list[Point]) -> float:
         accumulator += points[i].x * (points[(i+1) % len(points)].y - points[i-1].y)
 
     area = abs(0.5 * accumulator)
-    area_scaled = (area / 14290)
+    area_scaled = area / AREA_FACTOR_SHADOW
     area_rounded = round(area_scaled * 2) / 2
 
     return area_rounded
 
 
-def __process_shadow_features(features: list[ShadowPoint], img) -> list[Shadow]:
+def __process_shadow_features(features: list[ShadowFeature], img) -> list[Shadow]:
     shadows: list[Shadow] = []
 
     for shadow in features:
@@ -64,7 +65,7 @@ def __process_shadow_features(features: list[ShadowPoint], img) -> list[Shadow]:
         remove_straight_angles(shadow, angles_1, angles_2)
 
 
-        # Ecken markieren
+        # Ecken markieren TODO: auslagern
         points = []
         for c in shadow.points:
             center = [int(c.x), int(c.y)]
@@ -102,7 +103,7 @@ def __process_shadow_features(features: list[ShadowPoint], img) -> list[Shadow]:
 #==================================#
 
 
-def contours_to_shadows(contours: list) -> list[ShadowPoint]:
+def contours_to_shadows(contours: list) -> list[ShadowFeature]:
     shadows = []
 
     for c in contours:
@@ -184,7 +185,7 @@ def summarize_similar_points(points: list[Point]) -> None:
 
 # Calculates and returns the distance between the points a and b
 def distance(a: Point, b: Point) -> float:
-    return np.linalg.norm((a.to_cv_array() - b.to_cv_array()), 2)
+    return np.linalg.norm((a.to_np_array() - b.to_np_array()), 2)
 
 
 
@@ -255,15 +256,15 @@ def find_split_points(edges: list[Edge]) -> list[Point]:
 #=====================================#
 
 
-def calculate_angles(shadow: ShadowPoint) -> tuple[list[float], list[float]]:
+def calculate_angles(shadow: ShadowFeature) -> tuple[list[float], list[float]]:
     angles_1: list[float] = []
     angles_2: list[float] = []
 
     for i in range(len(shadow.points)):
 
-        v = shadow.points[i].to_cv_array()
-        a = shadow.points[(i+1)%len(shadow.points)].to_cv_array()
-        b = shadow.points[(i-1)%len(shadow.points)].to_cv_array()
+        v = shadow.points[i].to_np_array()
+        a = shadow.points[(i+1)%len(shadow.points)].to_np_array()
+        b = shadow.points[(i-1)%len(shadow.points)].to_np_array()
 
         a = a - v
         b = b - v
@@ -300,7 +301,7 @@ def fix_angles(angles: list[float]) -> None:
 
 
 # Ecken mit 180°-Winkeln entfernen
-def remove_straight_angles(shadow: ShadowPoint, angles_1: list[float], angles_2: list[float]) -> None:
+def remove_straight_angles(shadow: ShadowFeature, angles_1: list[float], angles_2: list[float]) -> None:
     to_remove: list[int] = []
     
     for i in range(len(angles_1)):
@@ -318,8 +319,8 @@ def remove_straight_angles(shadow: ShadowPoint, angles_1: list[float], angles_2:
 
 
 
-def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[ShadowEdge]:
-    shadows: list[ShadowEdge] = []
+def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[list[Edge]]:
+    shadows: list[list[Edge]] = []
 
     # Form zerlegen, falls möglich
     for start_vertex in split_vertices:
@@ -346,7 +347,7 @@ def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[ShadowE
                                 edges.pop(ee_idx)
                                 break
 
-                    shadows.append(ShadowEdge(sub_shadow))
+                    shadows.append(sub_shadow)
 
                     found_sub_shadow = True
 
@@ -355,7 +356,7 @@ def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[ShadowE
             if found_sub_shadow:
                 break
 
-    shadows.append(ShadowEdge(edges))
+    shadows.append(edges)
 
     return shadows
 
@@ -411,20 +412,19 @@ def tri_wok(edges: list[Edge], start_vertex: Point, current_vertex: Point, split
 
 
 # Kanten im (oder gegen den) Uhrzeigersinn sortierern
-def sort_shadow_edges(shadows: list[ShadowEdge]) -> list[ShadowPoint]:
-    sorted_shadows: list[ShadowPoint] = []
+def sort_shadow_edges(shadows: list[list[Edge]]) -> list[ShadowFeature]:
+    sorted_shadows: list[ShadowFeature] = []
 
     for shadow in shadows:
-        sorted_points = [shadow.edges[0].p2]
-        while len(shadow.edges) > 0:
-            for edge_idx in range(len(shadow.edges)):
-                edge = shadow.edges[edge_idx]
+        sorted_points = [shadow[0].p2]
+        while len(shadow) > 0:
+            for e_idx, edge in enumerate(shadow):
                 found = False
 
                 for i in range(2):
                     if edge.get(i) == sorted_points[len(sorted_points)-1]:
                         sorted_points.append(edge.get(1-i))
-                        shadow.edges.pop(edge_idx)
+                        shadow.pop(e_idx)
                         found = True
                         break
 
@@ -434,6 +434,6 @@ def sort_shadow_edges(shadows: list[ShadowEdge]) -> list[ShadowPoint]:
         # Start- und Endpunkt sind gleich -> einer kann weg
         sorted_points.pop(0)
 
-        sorted_shadows.append(ShadowPoint(sorted_points))
+        sorted_shadows.append(ShadowFeature(sorted_points))
 
     return sorted_shadows
