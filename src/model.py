@@ -1,6 +1,8 @@
 import math
 import numpy as np
+import helper
 from sympy import Eq, solve, Symbol
+from pyniryo import cv2
 
 
 # Umrechnungsfaktoren zwischen Bildern und unseren Modellen
@@ -28,6 +30,34 @@ class Point:
     def copy(self):
         return Point(self.x, self.y)
 
+    def __add__(self, other):
+        if isinstance(other, Point):
+            return Point(self.x + other.x, self.y + other.y)
+        elif isinstance(other, int):
+            return Point(self.x + other, self.y + other)
+
+        raise TypeError('other must be type Point or int')
+
+    def __sub__(self, other):
+        if isinstance(other, Point):
+            return Point(self.x - other.x, self.y - other.y)
+        elif isinstance(other, int):
+            return Point(self.x - other, self.y - other)
+
+        raise TypeError('other must be type Point or int')
+
+    def __mul__(self, other):
+        if isinstance(other, int):
+            return Point(self.x * other, self.y * other)
+
+        raise TypeError('other must be type int')
+
+    def __truediv__(self, other):
+        if isinstance(other, int):
+            return Point(self.x / other, self.y / other)
+
+        raise TypeError('other must be type int')
+
     def __str__(self) -> str:
         return f"Point(x={self.x}, y={self.y})"
 
@@ -41,6 +71,55 @@ class Point:
 
     def __hash__(self) -> int:
         return hash(str(self))
+
+    @staticmethod
+    def rotate_around_point(points: list[Point], center: Point, angle: float) -> list[Point]:
+        rads = math.radians(angle)
+        cos = math.cos(rads)
+        sin = math.sin(rads)
+
+        rotated_vertices: list[Point] = []
+
+        for point in points:
+            p = point - center
+
+            x = p.x * cos - p.y * sin + center.x
+            y = p.x * sin + p.y * cos + center.y
+
+            rotated_vertices.append(Point(x, y))
+
+        return points
+
+    @staticmethod
+    def scale_points(points: list[Point], factor: float) -> list[Point]:
+        scaled_points: list[Point] = []
+
+        for p in points:
+            scaled_points.append(p * factor)
+
+        return scale_points
+
+    @staticmethod
+    def move_points(points: list[Point], diff: Point) -> list[Point]:
+        moved_points: list[Point] = []
+
+        for p in points:
+            moved_points.append(p + diff)
+
+        return moved_points
+
+    @staticmethod
+    def get_center(points: list[Point]) -> Point:
+        p_sum = Point(0, 0)
+
+        for p in points:
+            p_sum += p
+
+        return p_sum / len(points)
+
+    @staticmethod
+    def to_np_array(points: list[Point]):
+        return np.array([[[p.x, p.y] for p in points]])
 
 
 class Polygon:
@@ -75,6 +154,17 @@ class Polygon:
             vertices.append(Point(v.x * LENGTH_FACTOR + offset.x, v.y * LENGTH_FACTOR + offset.y))
 
         return vertices
+
+    def draw(self, img, color, offset=Point(0, 0)) -> None:
+        pts: list[Point] = []
+
+        for v in self.vertices:
+            scaled = v * LENGTH_FACTOR
+            pts.append(scaled)
+
+        center = offset - helper.get_center([p * LENGTH_FACTOR for p in self.vertices])
+
+        cv2.fillPoly(img, helper.to_np_array(pts), color, offset=center.to_np_array())
 
     def __str__(self) -> str:
         return f'Polygon(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area})'
