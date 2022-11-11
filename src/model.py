@@ -2,6 +2,7 @@ import math
 import numpy as np
 from sympy import Eq, solve, Symbol
 from pyniryo import cv2
+from enum import Enum
 
 
 # Umrechnungsfaktoren zwischen Bildern und unseren Modellen
@@ -120,6 +121,19 @@ class Point:
     def list_to_np_array(points: list['Point']):
         return np.array([[[p.x, p.y] for p in points]])
 
+    @staticmethod
+    def angle(a: 'Point', b: 'Point') -> float:
+        a = a.to_np_array()
+        b = b.to_np_array()
+        
+        dot_prod = np.dot(a, b)
+        len_prod = abs(np.linalg.norm(a)) * abs(np.linalg.norm(b))
+
+        angle = math.acos( dot_prod / len_prod )
+        angle = math.degrees(angle)
+
+        return angle
+
 
 class Polygon:
     vertices: list[Point]
@@ -161,13 +175,22 @@ class Polygon:
         return self.__str__()
 
 
+class BlockType(Enum):
+    SQUARE = 1
+    PARALLELOGRAM = 2
+    SMALL_TRIANGLE = 3
+    MEDIUM_TRIANGLE = 4
+    LARGE_TRIANGLE = 5
+
 class Block(Polygon):
+    btype: BlockType
     center: Point
     rotation: float
     
-    def __init__(self, vertices: list[Point], interior_angles: list[float], area: float, center: Point, rotation: float) -> None:
+    def __init__(self, btype: BlockType, vertices: list[Point], interior_angles: list[float], area: float, center: Point, rotation: float) -> None:
         super().__init__(vertices, interior_angles, area)
 
+        self.btype = btype
         self.center = center
         self.rotation = rotation
 

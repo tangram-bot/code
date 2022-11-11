@@ -3,7 +3,7 @@ import numpy as np
 import cv.trackbar as tb
 from pyniryo import cv2, show_img_and_check_close
 from helper import vector_angle
-from model import LENGTH_FACTOR, Block, Point
+from model import Block, BlockType, Point
 from cv.features import BlockFeature
 
 
@@ -110,7 +110,7 @@ def __process_parallelogram(feature: BlockFeature, img) -> Block:
     cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'PARALLELOGRAM: center={feature.center} angle={angle}°')
 
-    return Block([Point(0, 0), Point(1, 1), Point(1, 2), Point(0, 1)], [45, 135, 45, 135], 1.0, feature.center, angle)
+    return Block(BlockType.PARALLELOGRAM, [Point(0, 0), Point(1, 1), Point(1, 2), Point(0, 1)], [45, 135, 45, 135], 1.0, feature.center, angle)
 
 
 def __process_square(feature: BlockFeature, img) -> Block:
@@ -125,7 +125,7 @@ def __process_square(feature: BlockFeature, img) -> Block:
     cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'SQUARE: center={feature.center} angle={angle}°')
 
-    return Block([Point(0, 0), Point(1, 0), Point(1, 1), Point(0, 1)], [90, 90, 90, 90], 1.0, feature.center, angle)
+    return Block(BlockType.SQUARE, [Point(0, 0), Point(1, 0), Point(1, 1), Point(0, 1)], [90, 90, 90, 90], 1.0, feature.center, angle)
 
 
 def __process_small_triangle(feature: BlockFeature, img) -> Block:
@@ -142,7 +142,7 @@ def __process_small_triangle(feature: BlockFeature, img) -> Block:
     cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'SMALL TRIANGLE: center={feature.center} angle={angle}°')
 
-    return Block([Point(0, 0), Point(1, 0), Point(0, 1)], [90, 45, 45], 0.5, feature.center, angle)
+    return Block(BlockType.SMALL_TRIANGLE, [Point(0, 0), Point(1, 0), Point(0, 1)], [90, 45, 45], 0.5, feature.center, angle)
 
 
 def __process_medium_triangle(feature: BlockFeature, img) -> Block:
@@ -159,7 +159,7 @@ def __process_medium_triangle(feature: BlockFeature, img) -> Block:
     cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'MEDIUM TRIANGLE: center={feature.center} angle={angle}°')
     
-    return Block([Point(0, 0), Point(2, 0), Point(1, 1)], [45, 45, 90], 1.0, feature.center, angle)
+    return Block(BlockType.MEDIUM_TRIANGLE, [Point(0, 0), Point(2, 0), Point(1, 1)], [45, 45, 90], 1.0, feature.center, angle)
 
 
 def __process_large_triangle(feature: BlockFeature, img) -> Block:
@@ -176,7 +176,7 @@ def __process_large_triangle(feature: BlockFeature, img) -> Block:
     cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'LARGE TRIANGLE: center={feature.center} angle={angle}°')
 
-    return Block([Point(0, 0), Point(2, 0), Point(0, 2)], [90, 45, 45], 2.0, feature.center, angle)
+    return Block(BlockType.LARGE_TRIANGLE, [Point(0, 0), Point(2, 0), Point(0, 2)], [90, 45, 45], 2.0, feature.center, angle)
 
 
 
