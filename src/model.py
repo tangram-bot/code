@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import helper
 from sympy import Eq, solve, Symbol
 from pyniryo import cv2
 
@@ -73,7 +72,7 @@ class Point:
         return hash(str(self))
 
     @staticmethod
-    def rotate_around_point(points: list[Point], center: Point, angle: float) -> list[Point]:
+    def rotate_around_point(points: list['Point'], center: 'Point', angle: float) -> list['Point']:
         rads = math.radians(angle)
         cos = math.cos(rads)
         sin = math.sin(rads)
@@ -91,16 +90,16 @@ class Point:
         return points
 
     @staticmethod
-    def scale_points(points: list[Point], factor: float) -> list[Point]:
+    def scale_points(points: list['Point'], factor: float) -> list['Point']:
         scaled_points: list[Point] = []
 
         for p in points:
             scaled_points.append(p * factor)
 
-        return scale_points
+        return scaled_points
 
     @staticmethod
-    def move_points(points: list[Point], diff: Point) -> list[Point]:
+    def move_points(points: list['Point'], diff: 'Point') -> list['Point']:
         moved_points: list[Point] = []
 
         for p in points:
@@ -109,7 +108,7 @@ class Point:
         return moved_points
 
     @staticmethod
-    def get_center(points: list[Point]) -> Point:
+    def get_center(points: list['Point']) -> 'Point':
         p_sum = Point(0, 0)
 
         for p in points:
@@ -118,7 +117,7 @@ class Point:
         return p_sum / len(points)
 
     @staticmethod
-    def to_np_array(points: list[Point]):
+    def list_to_np_array(points: list['Point']):
         return np.array([[[p.x, p.y] for p in points]])
 
 
@@ -162,9 +161,9 @@ class Polygon:
             scaled = v * LENGTH_FACTOR
             pts.append(scaled)
 
-        center = offset - helper.get_center([p * LENGTH_FACTOR for p in self.vertices])
+        center = offset - Point.get_center([p * LENGTH_FACTOR for p in self.vertices])
 
-        cv2.fillPoly(img, helper.to_np_array(pts), color, offset=center.to_np_array())
+        cv2.fillPoly(img, Point.list_to_np_array(pts), color, offset=center.to_np_array())
 
     def __str__(self) -> str:
         return f'Polygon(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area})'
@@ -254,7 +253,7 @@ class Edge:
     def get(self, index: int) -> Point:
         return self.p1 if index == 0 else self.p2
 
-    def intersects_with(self, edge2) -> bool:
+    def intersects_with(self, edge2: 'Edge') -> bool:
         if(not isinstance(edge2, Edge)): 
             return False
 
