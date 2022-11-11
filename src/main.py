@@ -5,7 +5,6 @@
 import argparse
 import logging
 from dotenv import load_dotenv, find_dotenv
-from random import random
 
 
 load_dotenv(find_dotenv())
@@ -39,6 +38,7 @@ import solver
 
 from pyniryo import cv2
 import numpy as np
+from random import random
 
 
 L = logging.getLogger('Main')
@@ -63,7 +63,7 @@ def main() -> None:
 
     img_solution = img_shadow.copy()
     for i in instructions:
-        i.block.draw(img_solution, (int(random() * 255), int(random() * 255), int(random() * 255)), i.position)
+        i.block.draw(img_solution, (int(random() * 255), int(random() * 255), int(random() * 255)), 0, i.position)
     cv2.imshow('Solution', img_solution)
     
     # TODO: Handling if no solution could be found

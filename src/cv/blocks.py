@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import cv.trackbar as tb
 from pyniryo import cv2, show_img_and_check_close
-from helper import rotate_around_center, vector_angle
+from helper import vector_angle
 from model import LENGTH_FACTOR, Block, Point
 from cv.features import BlockFeature
 
@@ -295,33 +295,4 @@ def __draw_contour_info(img, contour, corners) -> None:
 
 def __draw_blocks(img, blocks: list[Block]) -> None:
     for block in blocks:
-        vertices = []
-
-        # Skalieren
-        for v in block.vertices:
-            vertices.append((v.x * LENGTH_FACTOR, v.y * LENGTH_FACTOR))
-
-        # Center
-        x_sum = 0
-        y_sum = 0
-        for v in vertices:
-            x_sum += v[0]
-            y_sum += v[1]
-        x_sum //= len(vertices)
-        y_sum //= len(vertices)
-        
-        # Verschieben
-        for v_idx, v in enumerate(vertices):
-            vertices[v_idx] = (v[0] + block.center.x - x_sum, v[1] + block.center.y - y_sum)
-
-        # Rotate shape
-        vertices = rotate_around_center(vertices, block.center, block.rotation)
-
-        # Convert vertices' coordinates to integers
-        for v_idx, v in enumerate(vertices):
-            vertices[v_idx] = (round(v[0]), round(v[1]))
-        
-        # Draw shape after rotating
-        cv2.polylines(img, pts=np.array([vertices]), color=(0, 255, 0), thickness=3, isClosed=True)
-        # Draw shape's center
-        cv2.circle(img, block.center.to_np_array(), 5, (100, 100, 100), -1)
+        block.draw(img, (100, 100, 0), block.rotation)

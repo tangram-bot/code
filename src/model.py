@@ -77,7 +77,7 @@ class Point:
         cos = math.cos(rads)
         sin = math.sin(rads)
 
-        rotated_vertices: list[Point] = []
+        rotated_points: list[Point] = []
 
         for point in points:
             p = point - center
@@ -85,9 +85,9 @@ class Point:
             x = p.x * cos - p.y * sin + center.x
             y = p.x * sin + p.y * cos + center.y
 
-            rotated_vertices.append(Point(x, y))
+            rotated_points.append(Point(x, y))
 
-        return points
+        return rotated_points
 
     @staticmethod
     def scale_points(points: list['Point'], factor: float) -> list['Point']:
@@ -154,17 +154,6 @@ class Polygon:
 
         return vertices
 
-    def draw(self, img, color, offset=Point(0, 0)) -> None:
-        pts: list[Point] = []
-
-        for v in self.vertices:
-            scaled = v * LENGTH_FACTOR
-            pts.append(scaled)
-
-        center = offset - Point.get_center([p * LENGTH_FACTOR for p in self.vertices])
-
-        cv2.fillPoly(img, Point.list_to_np_array(pts), color, offset=center.to_np_array())
-
     def __str__(self) -> str:
         return f'Polygon(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area})'
 
@@ -182,36 +171,22 @@ class Block(Polygon):
         self.center = center
         self.rotation = rotation
 
+    def draw(self, img, color, rotation: float, offset: Point = None) -> None:
+        if offset is None:
+            offset = self.center
 
-    def get_rotated_vertices(self, center: Point=None, angle: float=None) -> list[Point]:
-        """
-        Dreht den Block um einen Punkt
-        Falls kein Punkt angegeben wird, wird der Mittelpunkt des Block genutzt
-        Falls kein Winkel angegeben wird, wird die Drehung des Blocks genutzt
-        """
+        # Block von Modell-Größe auf Pixel-Größe skalieren
+        pts = Point.scale_points(self.vertices, LENGTH_FACTOR)
 
-        if center is None:
-            center = self.center
+        # Block zu richtiger Position verschieben
+        center = offset - Point.get_center(pts)
+        pts = Point.move_points(pts, center)
 
-        if angle is None:
-            angle = self.rotation
-        
-        rads = math.radians(self.rotation)
-        cos = math.cos(rads)
-        sin = math.sin(rads)
+        # Block um Mittelpunkt rotieren
+        pts = Point.rotate_around_point(pts, offset, rotation)
 
-        new_vertices: list[Point] = []
-
-        for v in self.vertices:
-            old_x = v.x - center.x
-            old_y = v.y - center.y
-
-            new_x = old_x * cos - old_y * sin + center.x
-            new_y = old_x * sin + old_y * cos + center.y
-
-            new_vertices.append(Point(new_x, new_y))
-
-        return new_vertices
+        # Block zeichnen
+        cv2.fillPoly(img, Point.list_to_np_array(pts), color)
 
     def __str__(self) -> str:
         return f'Block(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area}, position={self.center}, rotation={self.rotation})'
