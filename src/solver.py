@@ -9,6 +9,10 @@ L = logging.getLogger('Solver')
 
 
 class MoveInstruction:
+    """
+    Repräsentiert einen Pick & Place-Befehl für den Roboter
+    """
+
     block: Block
     position: Point
     rotation: float
@@ -20,6 +24,10 @@ class MoveInstruction:
 
 
 def solve(blocks: List[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
+    """
+    Ermittelt eine Lösung für die übergebenen Blöcke und Shadows
+    """
+
     instructions: list[MoveInstruction] = []
     
     # Sort shadows by area in ascending order
@@ -28,12 +36,21 @@ def solve(blocks: List[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
     instr = __check_plain_blocks(blocks, shadows)
     instructions.extend(instr)
 
-
-    # for shadow in shadows:
-    #     instr = __solve_shadow(blocks, shadow)
-    #     instructions += instr
+    instr = __solve_rest(blocks, shadows)
+    instructions.extend(instr)
 
     return instructions
+
+
+
+
+
+
+
+
+#==============#
+# PLAIN BLOCKS #
+#==============#
 
 
 def __check_plain_blocks(blocks: list[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
@@ -48,7 +65,7 @@ def __check_plain_blocks(blocks: list[Block], shadows: list[Shadow]) -> list[Mov
         shadow: Shadow = shadows[s_idx]
 
         for b_idx, block in enumerate(blocks):
-            if len(shadow.vertices) == len(block.vertices) and shadow.area == block.area:
+            if __shadow_block_match(shadow, block):
 
                 blocks.pop(b_idx)
                 shadows.pop(s_idx)
@@ -66,7 +83,31 @@ def __check_plain_blocks(blocks: list[Block], shadows: list[Shadow]) -> list[Mov
     return instructions
 
 
+def __shadow_block_match(shadow: Shadow, block: Block) -> bool:
+    """
+    Gibt True zurück, wenn shadow und block die gleiche Form und Größe haben
+    """
+    
+    if shadow.area != block.area:
+        return False
+
+    if len(shadow.vertices) != len(block.vertices):
+        return False
+
+    # Um Quadrat und Parallelogramm unterscheiden zu können, müssen die Innenwinkel verglichen werden
+    try:
+        shadow.interior_angles.index(block.interior_angles[0])
+    except:
+        return False
+
+    return True
+
+
 def __get_block_rotation(shadow: Shadow, block: Block) -> float:
+    """
+    Berechnet den benötigten Winkel von block, damit shadow und block deckungsgleich sind
+    """
+
     switch = {
         BlockType.SQUARE: __get_angle_square,
         BlockType.PARALLELOGRAM: __get_angle_parallelogram,
@@ -80,7 +121,6 @@ def __get_block_rotation(shadow: Shadow, block: Block) -> float:
     if rotation is None:
         raise TypeError(f'Block has an invalid type: {block.btype._name_}')
 
-    print('ROTATION', rotation, rotation(shadow))
     return rotation(shadow)
 
 
@@ -144,6 +184,18 @@ def __get_angle_large_triangle(shadow: Shadow) -> float:
 
     return angle
 
-def __solve_shadow(blocks: list[Block], shadow: Shadow) -> list[MoveInstruction]:
 
-    pass
+
+
+
+
+
+
+
+#====================#
+# MORE COMPLEX STUFF #
+#====================#
+
+
+def __solve_rest(blocks: list[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
+    return []
