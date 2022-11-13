@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from typing import List
 from model import Point, Block, BlockType, Shadow
-from helper import vector_angle
+from exception import TangramException
 
 
 L = logging.getLogger('Solver')
@@ -28,6 +28,8 @@ def solve(blocks: List[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
     Ermittelt eine Lösung für die übergebenen Blöcke und Shadows
     """
 
+    __check_too_few_blocks(blocks, shadows)
+
     instructions: list[MoveInstruction] = []
     
     # Sort shadows by area in ascending order
@@ -45,6 +47,14 @@ def solve(blocks: List[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
 
 
 
+
+
+def __check_too_few_blocks(blocks: list[Block], shadows: list[Shadow]) -> None:
+    b_area = sum([b.area for b in blocks])
+    s_area = sum([s.area for s in shadows])
+
+    if b_area < s_area:
+        raise TangramException('There aren\'t enough blocks to solve this tangram')
 
 
 
