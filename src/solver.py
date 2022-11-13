@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 from typing import List
-from model import Point, Block, BlockType, Shadow
+from model import Point, Block, BlockType, Shadow, Edge
 from exception import TangramException
 
 
@@ -32,9 +32,6 @@ def solve(blocks: List[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
 
     instructions: list[MoveInstruction] = []
     
-    # Sort shadows by area in ascending order
-    shadows.sort(key=lambda p: p.area)
-
     instr = __check_plain_blocks(blocks, shadows)
     instructions.extend(instr)
 
@@ -208,4 +205,86 @@ def __get_angle_large_triangle(shadow: Shadow) -> float:
 
 
 def __solve_rest(blocks: list[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
+    """
+    
+    """
+
+    # Shadows aufsteigend nach Größe sortieren
+    shadows.sort(key=lambda p: p.area, reverse=False)
+    # Blocks absteigend nach Größe sortieren
+    blocks.sort(key=lambda b: b.area, reverse=True)
+
+    instructions: list[MoveInstruction] = []
+
+    for s in shadows:
+        instr = __solve_loop(blocks, s)
+
+        if instr is None:
+            L.info(f'Couldn\'t find a solution for {s}')
+            continue
+
+        instructions.extend(instr)
+
+    return instructions
+
+
+def __solve_loop(blocks: list[Block], shadow: Shadow) -> list[MoveInstruction] | None:
+
+    for sv_idx, sv in enumerate(shadow.vertices):
+        for b_idx, b in enumerate(blocks):
+            for bv_idx, bv in enumerate(b.vertices):
+
+                # Verhältnis der Innenwinkel bei sv und bv
+                angle_ratio = shadow.interior_angles[sv_idx] / b.interior_angles[bv_idx]
+
+                # Winkel vom Block ist größer als der des Shadows
+                # => Block passt nicht an diese Stelle
+                if angle_ratio < 1:
+                    continue
+
+                # Winkel vom Block und Shadow sind gleich groß
+                # => Block muss nur ein mal angelegt werden
+                elif angle_ratio == 1:
+                    pass
+
+                # Winkel vom Block ist kleiner als der des Shadows
+                # => Block muss an beide Kanten angelegt werden
+                else:
+                    pass
+
     return []
+
+
+def __valid_pos(shadow, block, sv_idx, bv_idx, angle) -> bool:
+    """
+    return True, wenn Block an Vertex platziert werden kann, ohne dass sich Kanten schneiden
+    """
+
+    pass
+
+
+
+def __subtract_block():
+    """
+    entfernt Block aus Polygon
+    """
+    
+    pass
+
+
+def __to_edges(vertices: list[Point]) -> list[Edge]:
+    edges: list[Edge] = []
+
+    for v_idx, v in enumerate(vertices):
+        edges.append(Edge(vertices[v_idx-1], v))
+
+    return edges
+
+
+def __intersecting_edges(block: list[Edge], shadow: list[Edge]) -> bool:
+    for be in block:
+        for se in shadow:
+            if be.intersects_with(se):
+                return True
+
+    return False
