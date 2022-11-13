@@ -21,6 +21,6 @@ def set_sound_pack(sound_folder: str) -> None:
 def play(audio_file: AudioFile) -> None:
     import main
     if(main.play_sound()):
-        file = f"resources/audio/{sound_pack}/{audio_file.value}.mp3"
-        if(os.path.exists(file)):
-            playsound(sound=file, block=False)
+        file_path = f"resources/audio/{sound_pack}/{audio_file.value}.mp3"
+        if(os.path.exists(file_path)):
+            playsound(sound=file_path, block=False)
