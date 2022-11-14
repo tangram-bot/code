@@ -28,7 +28,7 @@ def solve(blocks: List[Block], shadows: list[Shadow], img) -> list[MoveInstructi
     Ermittelt eine Lösung für die übergebenen Blöcke und Shadows
     """
 
-    __check_too_few_blocks(blocks, shadows)
+    # __check_too_few_blocks(blocks, shadows)
 
     instructions: list[MoveInstruction] = []
     
@@ -227,7 +227,7 @@ def __solve_rest(blocks: list[Block], shadows: list[Shadow], img) -> list[MoveIn
 
     return instructions
 
-
+from pyniryo import cv2
 def __solve_loop(blocks: list[Block], shadow: Shadow, img) -> list[MoveInstruction] | None:
 
     for sv_idx, sv in enumerate(shadow.vertices):
@@ -242,45 +242,52 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, img) -> list[MoveInstructi
                 if angle_ratio < 1:
                     continue
 
-                # Winkel vom Block und Shadow sind gleich groß
-                # => Block muss nur ein mal angelegt werden
-                elif angle_ratio == 1:
+                # # Winkel vom Block und Shadow sind gleich groß
+                # # => Block muss nur ein mal angelegt werden
+                # elif angle_ratio == 1:
 
-                    #=== Winkelhalbierende vom Shadow ===#
-                    a_vec = shadow.get_vertex(sv_idx-1) - sv
-                    a_angle = Point.angle(a_vec, Point(0, 1))
+                cv2.line(img, shadow.get_vertex(sv_idx-1).to_np_int_array(), sv.to_np_int_array(), (255, 255, 0), 5)
+                cv2.circle(img, sv.to_np_int_array(), 10, (0, 255, 255), -1)
 
-                    b_vec = shadow.get_vertex(sv_idx+1) - sv
-                    b_angle = Point.angle(b_vec, Point(0, 1))
+                s_vec = shadow.get_vertex(sv_idx-1) - sv
 
-                    mid_angle = (b_angle - a_angle) / 2
-                    s_mid_vec = Point.rotate_around_point([shadow.get_vertex(sv_idx-1)], sv, mid_angle)[0] - sv
+                b_vec = b.get_vertex(bv_idx-1) - bv
 
+                angle = Point.angle(s_vec, b_vec, True)
 
-                    #=== Winkelhalbierende vom Block ===#
-                    a_vec = b.get_vertex(bv_idx-1) - bv
-                    a_angle = Point.angle(a_vec, Point(0, 1))
+                block_vertices = b.get_scaled_vertices()
 
-                    b_vec = b.get_vertex(bv_idx+1) - bv
-                    b_angle = Point.angle(b_vec, Point(0, 1))
+                block_vertices = Point.move_points(block_vertices, sv- block_vertices[bv_idx])
+                block_vertices = Point.rotate_around_point(block_vertices, sv, angle)
 
-                    mid_angle = (b_angle - a_angle) / 2
-                    b_mid_vec = Point.rotate_around_point([b.get_vertex(bv_idx-1)], bv, mid_angle)[0] - bv
+                cv2.polylines(img, Point.list_to_np_array(block_vertices), True, (125, 0, 125), 6)
 
+                block_edges = __to_edges(block_vertices)
+                shadow_edges = __to_edges(shadow.vertices)
 
-                    #=== Drehung ===#
-                    print(s_mid_vec, b_mid_vec)
-                    angle_diff = Point.angle(s_mid_vec, b_mid_vec)
-                    print(angle_diff)
+                # TODO: https://discordapp.com/channels/@me/799333662964449311/1041824146922946571
+                if __intersecting_edges(block_edges, shadow_edges):
+                    continue
 
+                
+                shadow_vertices = shadow.vertices.copy()
+                block_vertices.pop(bv_idx)
+                block_vertices.reverse()
+                if angle_ratio == 1:
+                    shadow_vertices.pop(sv_idx)
+                shadow_vertices = shadow_vertices[:sv_idx] + block_vertices + shadow_vertices[sv_idx:]
 
+                cv2.polylines(img, Point.list_to_np_array(shadow_vertices), True, (255, 255, 255), 5)
 
-                    pass
+                # TODO: bisschen post processing
+                # TODO: genutzte Blöcke entfernen
+                # TODO: rekursiver Aufruf
 
-                # Winkel vom Block ist kleiner als der des Shadows
-                # => Block muss an beide Kanten angelegt werden
-                else:
-                    pass
+                return 
+                # # Winkel vom Block ist kleiner als der des Shadows
+                # # => Block muss an beide Kanten angelegt werden
+                # else:
+                #     pass
 
     return []
 

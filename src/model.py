@@ -263,21 +263,37 @@ class Edge:
     def get(self, index: int) -> Point:
         return self.p1 if index == 0 else self.p2
 
-    def intersects_with(self, edge2: 'Edge') -> bool:
-        if(not isinstance(edge2, Edge)): 
+    def intersects_with(self, other: 'Edge') -> bool:
+        if(not isinstance(other, Edge)): 
             return False
 
-        angle = angle_between_edges(self, edge2)
-
-        if(angle < 0.01):
+        angle = angle_between_edges(self, other)
+        if(angle < 1):
             return False
 
-        intersect_points = edges_intersect_point(self, edge2)
-        results = [False, False]
-        for i in range(intersect_points):
-            results[i] = not( intersect_points[i] < 0.01 or intersect_points[i] > 0.99)
+        b1 = self.p1
+        b11 = b1.x
+        b12 = b1.y
 
-        return results[0] and results[1]
+        r1 = self.p2 - self.p1
+        r11 = r1.x
+        r12 = r1.y
+
+        b2 = other.p1
+        b21 = b2.x
+        b22 = b2.y
+
+        r2 = other.p2 - other.p1
+        r21 = r2.x
+        r22 = r2.y
+
+        s = (r22 * (b11 - b21) - r21 * (b12 - b22)) / (r12 * r21 - r11 * r22)
+        t = (b11 - b21 + s * r11) / r21
+
+        eps = 0.09 # TODO: vielleicht nochmal anpassen :)
+        return (eps < s < 1-eps) and (eps < t < 1-eps)
+
+
 
 
     def __str__(self) -> str:
@@ -312,18 +328,4 @@ def angle_between_edges(e1: Edge, e2: Edge) -> float:
     angle = math.acos(dot_prod / len_prod)
     angle = math.degrees(angle)
 
-def edges_intersect_point(e1: Edge, e2: Edge):
-    v1 = e1.p2.to_np_int_array() - e1.p1.to_np_int_array()
-    v2 = e2.p2.to_np_int_array() - e2.p1.to_np_int_array()
-
-    equations = []
-
-    param1 = Symbol("x")
-    param2 = Symbol("y")
-
-    for i in range(2):
-        equation = Eq((v1[0][i] * param1 + v2[0][i] * param2), (e1.p1.get(i) - e2.p1.get(i)))
-        equations.append(equation)
-    
-    result = solve(equations, (param1, param2))
-    return result["x"], result["y"]
+    return angle
