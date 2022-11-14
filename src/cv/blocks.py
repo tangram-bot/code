@@ -20,7 +20,7 @@ def find_blocks(img) -> list[Block]:
 
     __draw_blocks(img, blocks)
 
-    show_img_and_check_close('Blocks', img)
+    # show_img_and_check_close('Blocks', img)
 
     return blocks
 
@@ -105,9 +105,9 @@ def __process_parallelogram(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(45)]
                 
-    angle = vector_angle(ref_vertex - feature.center.to_np_array(), (-1, -2)) % 180
+    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -2)) % 180
 
-    cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'PARALLELOGRAM: center={feature.center} angle={angle}°')
 
     return Block(BlockType.PARALLELOGRAM, [Point(0, 0), Point(1, 1), Point(1, 2), Point(0, 1)], [45, 135, 45, 135], 1.0, feature.center, angle)
@@ -120,9 +120,9 @@ def __process_square(feature: BlockFeature, img) -> Block:
         if v[0][1] < ref_vertex[0][1]:
             ref_vertex = v
     
-    angle = vector_angle(ref_vertex - feature.center.to_np_array(), (-1, -1)) % 90
+    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -1)) % 90
     
-    cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'SQUARE: center={feature.center} angle={angle}°')
 
     return Block(BlockType.SQUARE, [Point(0, 0), Point(1, 0), Point(1, 1), Point(0, 1)], [90, 90, 90, 90], 1.0, feature.center, angle)
@@ -132,14 +132,14 @@ def __process_small_triangle(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(90)]
                 
-    angle = vector_angle(ref_vertex - feature.center.to_np_array(), (-1, -1))
+    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -1))
 
     # Fix rotation > 180°
-    cross = np.cross((ref_vertex-feature.center.to_np_array()), (-1, -1))
+    cross = np.cross((ref_vertex-feature.center.to_np_int_array()), (-1, -1))
     if cross > 0:
         angle = 360 - angle
     
-    cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'SMALL TRIANGLE: center={feature.center} angle={angle}°')
 
     return Block(BlockType.SMALL_TRIANGLE, [Point(0, 0), Point(1, 0), Point(0, 1)], [90, 45, 45], 0.5, feature.center, angle)
@@ -149,14 +149,14 @@ def __process_medium_triangle(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(90)]
     
-    angle = vector_angle(ref_vertex - feature.center.to_np_array(), (0, 1))
+    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (0, 1))
 
     # Fix rotation > 180°
-    cross = np.cross((ref_vertex-feature.center.to_np_array()), (0, 1))
+    cross = np.cross((ref_vertex-feature.center.to_np_int_array()), (0, 1))
     if cross > 0:
         angle = 360 - angle
     
-    cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'MEDIUM TRIANGLE: center={feature.center} angle={angle}°')
     
     return Block(BlockType.MEDIUM_TRIANGLE, [Point(0, 0), Point(2, 0), Point(1, 1)], [45, 45, 90], 1.0, feature.center, angle)
@@ -166,14 +166,14 @@ def __process_large_triangle(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(90)]
                 
-    angle = vector_angle(ref_vertex - feature.center.to_np_array(), (-1, -1))
+    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -1))
     
     # Fix rotation > 180°
-    cross = np.cross((ref_vertex-feature.center.to_np_array()), (-1, -1))
+    cross = np.cross((ref_vertex-feature.center.to_np_int_array()), (-1, -1))
     if cross > 0:
         angle = 360 - angle
 
-    cv2.line(img, feature.center.to_np_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
     L.debug(f'LARGE TRIANGLE: center={feature.center} angle={angle}°')
 
     return Block(BlockType.LARGE_TRIANGLE, [Point(0, 0), Point(2, 0), Point(0, 2)], [90, 45, 45], 2.0, feature.center, angle)
@@ -281,8 +281,8 @@ def __draw_corners(img, corners) -> None:
 
 
 def __draw_center(img, center: Point) -> None:
-    cv2.circle(img, center.to_np_array(), 2, (0, 0, 0), -1)
-    cv2.circle(img, center.to_np_array(), 1, (255, 0, 0), -1)
+    cv2.circle(img, center.to_np_int_array(), 2, (0, 0, 0), -1)
+    cv2.circle(img, center.to_np_int_array(), 1, (255, 0, 0), -1)
 
 
 def __draw_contour_info(img, contour, corners) -> None:

@@ -59,7 +59,9 @@ def main() -> None:
     shadows = cv.find_shadows(img_shadow)
 
     # Find solution
-    instructions = solver.solve(blocks, shadows)
+    img_temp_sol = img_shadow.copy()
+    instructions = solver.solve(blocks, shadows, img_temp_sol)
+    cv2.imshow('Solution Debug', img_temp_sol)
 
     img_solution = img_shadow.copy()
     for i in instructions:

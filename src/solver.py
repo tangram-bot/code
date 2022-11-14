@@ -23,7 +23,7 @@ class MoveInstruction:
         self.rotation = rotation
 
 
-def solve(blocks: List[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
+def solve(blocks: List[Block], shadows: list[Shadow], img) -> list[MoveInstruction]:
     """
     Ermittelt eine Lösung für die übergebenen Blöcke und Shadows
     """
@@ -35,7 +35,7 @@ def solve(blocks: List[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
     instr = __check_plain_blocks(blocks, shadows)
     instructions.extend(instr)
 
-    instr = __solve_rest(blocks, shadows)
+    instr = __solve_rest(blocks, shadows, img)
     instructions.extend(instr)
 
     return instructions
@@ -149,7 +149,7 @@ def __get_angle_parallelogram(shadow: Shadow) -> float:
 
     angle = Point.angle(vec, Point(-1, -2)) % 180
 
-    cross = np.cross(vec.to_np_array(), (-1, -2))
+    cross = np.cross(vec.to_np_int_array(), (-1, -2))
     if cross > 0:
         angle = 360 - angle
 
@@ -161,7 +161,7 @@ def __get_angle_small_triangle(shadow: Shadow) -> float:
 
     angle = Point.angle(vec, Point(-1, -1))
 
-    cross = np.cross(vec.to_np_array(), (-1, -1))
+    cross = np.cross(vec.to_np_int_array(), (-1, -1))
     if cross > 0:
         angle = 360 - angle
 
@@ -173,7 +173,7 @@ def __get_angle_medium_triangle(shadow: Shadow) -> float:
 
     angle = Point.angle(vec, Point(0, 1))
 
-    cross = np.cross(vec.to_np_array(), (0, 1))
+    cross = np.cross(vec.to_np_int_array(), (0, 1))
     if cross > 0:
         angle = 360 - angle
 
@@ -185,7 +185,7 @@ def __get_angle_large_triangle(shadow: Shadow) -> float:
 
     angle = Point.angle(vec, Point(-1, -1))
 
-    cross = np.cross(vec.to_np_array(), (-1, -1))
+    cross = np.cross(vec.to_np_int_array(), (-1, -1))
     if cross > 0:
         angle = 360 - angle
 
@@ -204,7 +204,7 @@ def __get_angle_large_triangle(shadow: Shadow) -> float:
 #====================#
 
 
-def __solve_rest(blocks: list[Block], shadows: list[Shadow]) -> list[MoveInstruction]:
+def __solve_rest(blocks: list[Block], shadows: list[Shadow], img) -> list[MoveInstruction]:
     """
     
     """
@@ -217,7 +217,7 @@ def __solve_rest(blocks: list[Block], shadows: list[Shadow]) -> list[MoveInstruc
     instructions: list[MoveInstruction] = []
 
     for s in shadows:
-        instr = __solve_loop(blocks, s)
+        instr = __solve_loop(blocks, s, img)
 
         if instr is None:
             L.info(f'Couldn\'t find a solution for {s}')
@@ -228,7 +228,7 @@ def __solve_rest(blocks: list[Block], shadows: list[Shadow]) -> list[MoveInstruc
     return instructions
 
 
-def __solve_loop(blocks: list[Block], shadow: Shadow) -> list[MoveInstruction] | None:
+def __solve_loop(blocks: list[Block], shadow: Shadow, img) -> list[MoveInstruction] | None:
 
     for sv_idx, sv in enumerate(shadow.vertices):
         for b_idx, b in enumerate(blocks):
@@ -245,6 +245,36 @@ def __solve_loop(blocks: list[Block], shadow: Shadow) -> list[MoveInstruction] |
                 # Winkel vom Block und Shadow sind gleich groß
                 # => Block muss nur ein mal angelegt werden
                 elif angle_ratio == 1:
+
+                    #=== Winkelhalbierende vom Shadow ===#
+                    a_vec = shadow.get_vertex(sv_idx-1) - sv
+                    a_angle = Point.angle(a_vec, Point(0, 1))
+
+                    b_vec = shadow.get_vertex(sv_idx+1) - sv
+                    b_angle = Point.angle(b_vec, Point(0, 1))
+
+                    mid_angle = (b_angle - a_angle) / 2
+                    s_mid_vec = Point.rotate_around_point([shadow.get_vertex(sv_idx-1)], sv, mid_angle)[0] - sv
+
+
+                    #=== Winkelhalbierende vom Block ===#
+                    a_vec = b.get_vertex(bv_idx-1) - bv
+                    a_angle = Point.angle(a_vec, Point(0, 1))
+
+                    b_vec = b.get_vertex(bv_idx+1) - bv
+                    b_angle = Point.angle(b_vec, Point(0, 1))
+
+                    mid_angle = (b_angle - a_angle) / 2
+                    b_mid_vec = Point.rotate_around_point([b.get_vertex(bv_idx-1)], bv, mid_angle)[0] - bv
+
+
+                    #=== Drehung ===#
+                    print(s_mid_vec, b_mid_vec)
+                    angle_diff = Point.angle(s_mid_vec, b_mid_vec)
+                    print(angle_diff)
+
+
+
                     pass
 
                 # Winkel vom Block ist kleiner als der des Shadows

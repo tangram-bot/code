@@ -14,52 +14,55 @@ LENGTH_FACTOR = 123
 
 
 class Point:
-    x: int
-    y: int
+    x: float
+    y: float
 
-    def __init__(self, x: int, y: int) -> None:
-        self.x = int(x)
-        self.y = int(y)
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
+    def to_np_int_array(self):
+        return np.array([int(self.x), int(self.y)])
 
     def to_np_array(self):
         return np.array([self.x, self.y])
 
-    def get(self, index: int) -> int:
+    def get(self, index: int) -> float:
         return self.x if index == 0 else self.y
 
-    def copy(self):
+    def copy(self) -> 'Point':
         return Point(self.x, self.y)
 
-    def __add__(self, other):
+    def __add__(self, other) -> 'Point':
         if isinstance(other, Point):
             return Point(self.x + other.x, self.y + other.y)
-        elif isinstance(other, int):
+        elif isinstance(other, int) or isinstance(other, float):
             return Point(self.x + other, self.y + other)
 
-        raise TypeError('other must be type Point or int')
+        raise TypeError('other must be type Point, int or float')
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> 'Point':
         if isinstance(other, Point):
             return Point(self.x - other.x, self.y - other.y)
-        elif isinstance(other, int):
+        elif isinstance(other, int) or isinstance(other, float):
             return Point(self.x - other, self.y - other)
 
-        raise TypeError('other must be type Point or int')
+        raise TypeError('other must be type Point, int or float')
 
-    def __mul__(self, other):
-        if isinstance(other, int):
+    def __mul__(self, other) -> 'Point':
+        if isinstance(other, int) or isinstance(other, float):
             return Point(self.x * other, self.y * other)
 
-        raise TypeError('other must be type int')
+        raise TypeError('other must be type int or float')
 
-    def __truediv__(self, other):
-        if isinstance(other, int):
+    def __truediv__(self, other) -> 'Point':
+        if isinstance(other, int) or isinstance(other, float):
             return Point(self.x / other, self.y / other)
 
-        raise TypeError('other must be type int')
+        raise TypeError('other must be type int or float')
 
     def __str__(self) -> str:
-        return f"Point(x={self.x}, y={self.y})"
+        return f"Point(x={round(self.x, 2)}, y={round(self.y, 2)})"
 
     def __repr__(self) -> str:
         return self.__str__() 
@@ -119,10 +122,10 @@ class Point:
 
     @staticmethod
     def list_to_np_array(points: list['Point']):
-        return np.array([[[p.x, p.y] for p in points]])
+        return np.array([[[int(p.x), int(p.y)] for p in points]])
 
     @staticmethod
-    def angle(a: 'Point', b: 'Point') -> float:
+    def angle(a: 'Point', b: 'Point', fix_reflex_angles=False) -> float:
         a = a.to_np_array()
         b = b.to_np_array()
         
@@ -131,6 +134,11 @@ class Point:
 
         angle = math.acos( dot_prod / len_prod )
         angle = math.degrees(angle)
+
+        if fix_reflex_angles:
+            cross = np.cross(a, b)
+            if cross > 0:
+                angle = 360 - angle
 
         return angle
 
@@ -146,7 +154,7 @@ class Polygon:
         self.area = area
 
     def to_np_array(self):
-        return [v.to_np_array() for v in self.vertices]
+        return [v.to_np_int_array() for v in self.vertices]
 
     def get_center(self, offset=Point(0, 0)) -> Point:
         center = offset.copy()
@@ -167,6 +175,10 @@ class Polygon:
             vertices.append(Point(v.x * LENGTH_FACTOR + offset.x, v.y * LENGTH_FACTOR + offset.y))
 
         return vertices
+
+    def get_vertex(self, index: int) -> Point:
+        index = index % len(self.vertices)
+        return self.vertices[index]
 
     def __str__(self) -> str:
         return f'Polygon(vertices={self.vertices}, interior_angles={self.interior_angles}, area={self.area})'
@@ -288,11 +300,11 @@ def edges_equal_direction_sensitive(e1: Edge, e2: Edge) -> bool:
     return e1.p1 == e2.p1 and e1.p2 == e2.p2
 
 def angle_between_edges(e1: Edge, e2: Edge) -> float:
-    a = e1.p1.to_np_array()
-    b = e2.p1.to_np_array()
+    a = e1.p1.to_np_int_array()
+    b = e2.p1.to_np_int_array()
 
-    a = a - e1.p2.to_np_array()
-    b = b - e2.p2.to_np_array()
+    a = a - e1.p2.to_np_int_array()
+    b = b - e2.p2.to_np_int_array()
 
     dot_prod = np.dot(a, b)
     len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
@@ -301,8 +313,8 @@ def angle_between_edges(e1: Edge, e2: Edge) -> float:
     angle = math.degrees(angle)
 
 def edges_intersect_point(e1: Edge, e2: Edge):
-    v1 = e1.p2.to_np_array() - e1.p1.to_np_array()
-    v2 = e2.p2.to_np_array() - e2.p1.to_np_array()
+    v1 = e1.p2.to_np_int_array() - e1.p1.to_np_int_array()
+    v2 = e2.p2.to_np_int_array() - e2.p1.to_np_int_array()
 
     equations = []
 

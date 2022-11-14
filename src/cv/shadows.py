@@ -19,7 +19,7 @@ def find_shadows(img) -> list[Shadow]:
 
     shadows = __process_shadow_features(features, img)
 
-    show_img_and_check_close('Shadows', img)
+    # show_img_and_check_close('Shadows', img)
 
     return shadows
 
@@ -51,6 +51,17 @@ def __get_area(points: list[Point]) -> float:
     area_rounded = round(area_scaled * 2) / 2
 
     return area_rounded
+
+
+def __counterclockwise(points: list[Point], interior_angles: list[float]) -> bool:
+    a = points[-1] - points[0]
+    b = points[+1] - points[0]
+
+    angle = Point.angle(a, b, True)
+
+    angle_diff = angle - interior_angles[0]
+
+    return abs(angle_diff) > 5.0
 
 
 def __process_shadow_features(features: list[ShadowFeature], img) -> list[Shadow]:
@@ -87,6 +98,10 @@ def __process_shadow_features(features: list[ShadowFeature], img) -> list[Shadow
         area = __get_area(shadow.points)
 
         L.debug('Anzahl Ecken=%d; Winkelsumme=%d°; Winkel=%s; Fläche=%f' % (len(shadow.points), ideal_int_angle_sum, interior_angles, area))
+
+        if __counterclockwise(shadow.points, interior_angles):
+            shadow.points.reverse()
+            interior_angles.reverse()
 
         shadows.append(Shadow(shadow.points, interior_angles, area))
 
@@ -185,7 +200,7 @@ def summarize_similar_points(points: list[Point]) -> None:
 
 # Calculates and returns the distance between the points a and b
 def distance(a: Point, b: Point) -> float:
-    return np.linalg.norm((a.to_np_array() - b.to_np_array()), 2)
+    return np.linalg.norm((a.to_np_int_array() - b.to_np_int_array()), 2)
 
 
 
@@ -262,9 +277,9 @@ def calculate_angles(shadow: ShadowFeature) -> tuple[list[float], list[float]]:
 
     for i in range(len(shadow.points)):
 
-        v = shadow.points[i].to_np_array()
-        a = shadow.points[(i+1)%len(shadow.points)].to_np_array()
-        b = shadow.points[(i-1)%len(shadow.points)].to_np_array()
+        v = shadow.points[i].to_np_int_array()
+        a = shadow.points[(i+1)%len(shadow.points)].to_np_int_array()
+        b = shadow.points[(i-1)%len(shadow.points)].to_np_int_array()
 
         a = a - v
         b = b - v
