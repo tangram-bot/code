@@ -103,7 +103,7 @@ def __shadow_block_match(shadow: Shadow, block: Block) -> bool:
     # Um Quadrat und Parallelogramm unterscheiden zu können, müssen die Innenwinkel verglichen werden
     try:
         shadow.interior_angles.index(block.interior_angles[0])
-    except:
+    except ValueError:
         return False
 
     return True
@@ -115,66 +115,30 @@ def __get_block_rotation(shadow: Shadow, block: Block) -> float:
     """
 
     switch = {
-        BlockType.SQUARE: __get_angle_square,
-        BlockType.PARALLELOGRAM: __get_angle_parallelogram,
-        BlockType.SMALL_TRIANGLE: __get_angle_small_triangle,
-        BlockType.MEDIUM_TRIANGLE: __get_angle_medium_triangle,
-        BlockType.LARGE_TRIANGLE: __get_angle_large_triangle,
+        BlockType.SQUARE: (90, Point(-1, -1), 90),
+        BlockType.PARALLELOGRAM: (45, Point(-1, -2), 180),
+        BlockType.SMALL_TRIANGLE: (90, Point(-1, -1), 360),
+        BlockType.MEDIUM_TRIANGLE: (90, Point(0, 1), 360),
+        BlockType.LARGE_TRIANGLE: (90, Point(-1, -1), 360),
     }
 
-    rotation = switch.get(block.btype)
+    args = switch.get(block.btype)
 
-    if rotation is None:
+    if args is None:
         raise TypeError(f'Block has an invalid type: {block.btype._name_}')
 
-    return rotation(shadow) - block.rotation
+    return __angle(shadow, args[0], args[1], args[2]) - block.rotation
 
 
-def __get_angle_square(shadow: Shadow) -> float:
-    ref_vertex = None
-
-    for v in shadow.vertices:
-        if ref_vertex is None or v.y < ref_vertex.y:
-            ref_vertex = v
-
-    angle = Point.angle(ref_vertex - shadow.get_center(), Point(-1, -1), True) % 90
-
-    return angle
-
-
-def __get_angle_parallelogram(shadow: Shadow) -> float:
-    ref_vertex = shadow.vertices[shadow.interior_angles.index(45)]
+def __angle(shadow: Shadow, vertex_angle: int, base_rot_vec: Point, angle_mod: int) -> float:
+    idx = shadow.interior_angles.index(vertex_angle)
+    ref_vertex = shadow.vertices[idx]
+    
     vec = ref_vertex - shadow.get_center()
 
-    angle = Point.angle(vec, Point(-1, -2), True) % 180
+    angle = Point.angle(vec, base_rot_vec, True) % angle_mod
 
     return angle
-
-def __get_angle_small_triangle(shadow: Shadow) -> float:
-    ref_vertex = shadow.vertices[shadow.interior_angles.index(90)]
-    vec = ref_vertex - shadow.get_center()
-
-    angle = Point.angle(vec, Point(-1, -1), True)
-
-    return angle
-
-def __get_angle_medium_triangle(shadow: Shadow) -> float:
-    ref_vertex = shadow.vertices[shadow.interior_angles.index(90)]
-    vec = ref_vertex - shadow.get_center()
-
-    angle = Point.angle(vec, Point(0, 1), True)
-
-    return angle
-
-def __get_angle_large_triangle(shadow: Shadow) -> float:
-    ref_vertex = shadow.vertices[shadow.interior_angles.index(90)]
-    vec = ref_vertex - shadow.get_center()
-
-    angle = Point.angle(vec, Point(-1, -1), True)
-
-    return angle
-
-
 
 
 
