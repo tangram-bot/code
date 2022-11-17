@@ -12,6 +12,7 @@ from PIL import Image
 from exception import TangramException
 from main import get_run_env
 from solver import MoveInstruction
+import math
 
 
 L = logging.getLogger('Robot')
@@ -153,6 +154,8 @@ def place(x, y, rotate) -> None:
         return
 
     L.info(f"Placing to {x}, {y}")
+
+    rotate = math.radians(rotate)
 
     # rotation of 0 should be the same direction as the source rotation
     # but because the piece of paper is on the other side of the robot, is has to be corrected here
