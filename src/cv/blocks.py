@@ -2,7 +2,6 @@ import logging
 import numpy as np
 import cv.trackbar as tb
 from pyniryo import cv2, show_img_and_check_close
-from helper import vector_angle
 from model import Block, BlockType, Point
 from cv.features import BlockFeature
 
@@ -47,7 +46,7 @@ def __find_block_features(img) -> list[BlockFeature]:
         corners = find_corners(contour)
 
         # Get the block's center
-        center = get_center(corners)
+        center = Point.get_center(corners)
 
         features.append(BlockFeature(corners, center, cv2.contourArea(contour)))
 
@@ -55,7 +54,7 @@ def __find_block_features(img) -> list[BlockFeature]:
         __draw_contour(img, contour)
         __draw_corners(img, corners)
         __draw_center(img, center)
-        __draw_contour_info(img, contour, corners)
+        # __draw_contour_info(img, contour, corners)
 
 
     # show_img_and_check_close('Blocks: Color Mask', img_mask)
@@ -105,9 +104,9 @@ def __process_parallelogram(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(45)]
                 
-    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -2)) % 180
+    angle = Point.angle(ref_vertex - feature.center, Point(-1, -2), True) % 180
 
-    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex.to_np_int_array(), (255, 0, 0), 3)
     L.debug(f'PARALLELOGRAM: center={feature.center} angle={angle}°')
 
     return Block(BlockType.PARALLELOGRAM, [Point(0, 0), Point(1, 1), Point(1, 2), Point(0, 1)], [45, 135, 45, 135], 1.0, feature.center, angle)
@@ -117,12 +116,12 @@ def __process_square(feature: BlockFeature, img) -> Block:
     ref_vertex = feature.vertices[0]
 
     for v in feature.vertices:
-        if v[0][1] < ref_vertex[0][1]:
+        if v.y < ref_vertex.y:
             ref_vertex = v
     
-    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -1)) % 90
+    angle = Point.angle(ref_vertex - feature.center, Point(-1, -1), True) % 90
     
-    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex.to_np_int_array(), (255, 0, 0), 3)
     L.debug(f'SQUARE: center={feature.center} angle={angle}°')
 
     return Block(BlockType.SQUARE, [Point(0, 0), Point(1, 0), Point(1, 1), Point(0, 1)], [90, 90, 90, 90], 1.0, feature.center, angle)
@@ -131,15 +130,10 @@ def __process_square(feature: BlockFeature, img) -> Block:
 def __process_small_triangle(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(90)]
-                
-    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -1))
 
-    # Fix rotation > 180°
-    cross = np.cross((ref_vertex-feature.center.to_np_int_array()), (-1, -1))
-    if cross > 0:
-        angle = 360 - angle
+    angle = Point.angle(ref_vertex - feature.center, Point(-1, -1))
     
-    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex.to_np_int_array(), (255, 0, 0), 3)
     L.debug(f'SMALL TRIANGLE: center={feature.center} angle={angle}°')
 
     return Block(BlockType.SMALL_TRIANGLE, [Point(0, 0), Point(1, 0), Point(0, 1)], [90, 45, 45], 0.5, feature.center, angle)
@@ -149,14 +143,9 @@ def __process_medium_triangle(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(90)]
     
-    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (0, 1))
-
-    # Fix rotation > 180°
-    cross = np.cross((ref_vertex-feature.center.to_np_int_array()), (0, 1))
-    if cross > 0:
-        angle = 360 - angle
+    angle = Point.angle(ref_vertex - feature.center, Point(0, 1), True)
     
-    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex.to_np_int_array(), (255, 0, 0), 3)
     L.debug(f'MEDIUM TRIANGLE: center={feature.center} angle={angle}°')
     
     return Block(BlockType.MEDIUM_TRIANGLE, [Point(0, 0), Point(2, 0), Point(1, 1)], [45, 45, 90], 1.0, feature.center, angle)
@@ -166,14 +155,9 @@ def __process_large_triangle(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(90)]
                 
-    angle = vector_angle(ref_vertex - feature.center.to_np_int_array(), (-1, -1))
-    
-    # Fix rotation > 180°
-    cross = np.cross((ref_vertex-feature.center.to_np_int_array()), (-1, -1))
-    if cross > 0:
-        angle = 360 - angle
+    angle = Point.angle(ref_vertex - feature.center, Point(-1, -1), True)
 
-    cv2.line(img, feature.center.to_np_int_array(), ref_vertex[0], (255, 0, 0), 3)
+    cv2.line(img, feature.center.to_np_int_array(), ref_vertex.to_np_int_array(), (255, 0, 0), 3)
     L.debug(f'LARGE TRIANGLE: center={feature.center} angle={angle}°')
 
     return Block(BlockType.LARGE_TRIANGLE, [Point(0, 0), Point(2, 0), Point(0, 2)], [90, 45, 45], 2.0, feature.center, angle)
@@ -238,30 +222,20 @@ def contour_too_small(contour):
     return area < tb.VALUES.B_MIN_CONTOUR_AREA
 
 
-def find_corners(contour):
+def find_corners(contour) -> list[Point]:
     accuracy = tb.VALUES.B_CORNER_ACCURACY
 
     perimeter = cv2.arcLength(contour, True)
 
     corners = cv2.approxPolyDP(contour, perimeter * 0.01 * accuracy, True)
 
-    return corners
+    corner_points: list[Point] = []
 
-
-def get_center(corners) -> Point:
-    x_sum = 0
-    y_sum = 0
-    
     for corner in corners:
-        x_sum += corner[0][0]
-        y_sum += corner[0][1]
+        x, y = corner[0]
+        corner_points.append(Point(x, y))
 
-    num_corners = len(corners)
-
-    x_sum //= num_corners
-    y_sum //= num_corners
-
-    return Point(x_sum, y_sum)
+    return corner_points
 
 
 
@@ -274,10 +248,11 @@ def __draw_contour(img, contour) -> None:
     cv2.drawContours(img, contour, -1, (0, 0, 255), 1)
 
 
-def __draw_corners(img, corners) -> None:
+def __draw_corners(img, corners: list[Point]) -> None:
     for corner in corners:
-        cv2.circle(img, corner[0], 2, (0, 0, 0), -1)
-        cv2.circle(img, corner[0], 1, (0, 255, 0), -1)
+        center = corner.to_np_array()
+        cv2.circle(img, center, 2, (0, 0, 0), -1)
+        cv2.circle(img, center, 1, (0, 255, 0), -1)
 
 
 def __draw_center(img, center: Point) -> None:

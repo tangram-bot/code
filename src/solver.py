@@ -1,7 +1,6 @@
 import logging
-import numpy as np
 from typing import List
-from model import Point, Block, BlockType, Shadow, Edge, intersection_parameters
+from model import Point, Block, BlockType, Shadow, Edge
 from exception import TangramException
 
 
@@ -128,7 +127,7 @@ def __get_block_rotation(shadow: Shadow, block: Block) -> float:
     if rotation is None:
         raise TypeError(f'Block has an invalid type: {block.btype._name_}')
 
-    return rotation(shadow) - block.rotation
+    return rotation(shadow)
 
 
 def __get_angle_square(shadow: Shadow) -> float:
@@ -138,7 +137,7 @@ def __get_angle_square(shadow: Shadow) -> float:
         if ref_vertex is None or v.y < ref_vertex.y:
             ref_vertex = v
 
-    angle = Point.angle(ref_vertex - shadow.get_center(), Point(-1, -1)) % 90
+    angle = Point.angle(ref_vertex - shadow.get_center(), Point(-1, -1), True) % 90
 
     return angle
 
@@ -147,11 +146,7 @@ def __get_angle_parallelogram(shadow: Shadow) -> float:
     ref_vertex = shadow.vertices[shadow.interior_angles.index(45)]
     vec = ref_vertex - shadow.get_center()
 
-    angle = Point.angle(vec, Point(-1, -2)) % 180
-
-    cross = np.cross(vec.to_np_int_array(), (-1, -2))
-    if cross > 0:
-        angle = 360 - angle
+    angle = Point.angle(vec, Point(-1, -2), True) % 180
 
     return angle
 
@@ -159,11 +154,7 @@ def __get_angle_small_triangle(shadow: Shadow) -> float:
     ref_vertex = shadow.vertices[shadow.interior_angles.index(90)]
     vec = ref_vertex - shadow.get_center()
 
-    angle = Point.angle(vec, Point(-1, -1))
-
-    cross = np.cross(vec.to_np_int_array(), (-1, -1))
-    if cross > 0:
-        angle = 360 - angle
+    angle = Point.angle(vec, Point(-1, -1), True)
 
     return angle
 
@@ -171,11 +162,7 @@ def __get_angle_medium_triangle(shadow: Shadow) -> float:
     ref_vertex = shadow.vertices[shadow.interior_angles.index(90)]
     vec = ref_vertex - shadow.get_center()
 
-    angle = Point.angle(vec, Point(0, 1))
-
-    cross = np.cross(vec.to_np_int_array(), (0, 1))
-    if cross > 0:
-        angle = 360 - angle
+    angle = Point.angle(vec, Point(0, 1), True)
 
     return angle
 
@@ -183,11 +170,7 @@ def __get_angle_large_triangle(shadow: Shadow) -> float:
     ref_vertex = shadow.vertices[shadow.interior_angles.index(90)]
     vec = ref_vertex - shadow.get_center()
 
-    angle = Point.angle(vec, Point(-1, -1))
-
-    cross = np.cross(vec.to_np_int_array(), (-1, -1))
-    if cross > 0:
-        angle = 360 - angle
+    angle = Point.angle(vec, Point(-1, -1), True)
 
     return angle
 

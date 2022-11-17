@@ -4,12 +4,12 @@ from model import Point, AREA_FACTOR
 
 
 class BlockFeature:
-    vertices: list[tuple[float, float]]
+    vertices: list[Point]
     center: Point
     area: float
 
 
-    def __init__(self, vertices: list[tuple[float, float]], center: Point, area: float) -> None:
+    def __init__(self, vertices: list[Point], center: Point, area: float) -> None:
         self.vertices = vertices
         self.center = center
         self.area = area
@@ -40,13 +40,12 @@ class BlockFeature:
 
         angles: list[float] = []
 
-        for i in range(len(self.vertices)):
-            v = self.vertices[i].ravel()
-            a = self.vertices[(i+1)%len(self.vertices)].ravel()
-            b = self.vertices[(i-1)%len(self.vertices)].ravel()
+        for i, v in enumerate(self.vertices):
+            a = self.vertices[(i+1)%len(self.vertices)] - v
+            b = self.vertices[(i-1)%len(self.vertices)] - v
 
-            a = a - v
-            b = b - v
+            a = a.to_np_array()
+            b = b.to_np_array()
 
             angle = math.acos( np.dot(a, b) / ( abs(np.linalg.norm(a)) * abs(np.linalg.norm(b)) ) )
             angle = math.degrees(angle)
