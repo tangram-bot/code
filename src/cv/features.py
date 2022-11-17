@@ -1,5 +1,3 @@
-import math
-import numpy as np
 from model import Point, AREA_FACTOR
 
 
@@ -20,7 +18,7 @@ class BlockFeature:
 
 
     def get_scaled_area(self) -> float:
-        TOLERANCE = 0.2
+        TOLERANCE = 0.25
 
         area = self.area / AREA_FACTOR
         area = round(area, 1)
@@ -36,19 +34,15 @@ class BlockFeature:
 
 
     def get_interior_angles(self) -> list[float]:
-        TOLERANCE = 20.0
+        TOLERANCE = 45 / 2
 
         angles: list[float] = []
 
         for i, v in enumerate(self.vertices):
-            a = self.vertices[(i+1)%len(self.vertices)] - v
-            b = self.vertices[(i-1)%len(self.vertices)] - v
+            a = self.vertices[(i+1) % len(self.vertices)] - v
+            b = self.vertices[(i-1) % len(self.vertices)] - v
 
-            a = a.to_np_array()
-            b = b.to_np_array()
-
-            angle = math.acos( np.dot(a, b) / ( abs(np.linalg.norm(a)) * abs(np.linalg.norm(b)) ) )
-            angle = math.degrees(angle)
+            angle = Point.angle(a, b)
 
             if abs(45.0 - angle) <= TOLERANCE:
                 angle = 45.0

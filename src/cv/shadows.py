@@ -121,14 +121,14 @@ def __process_shadow_features(features: list[ShadowFeature], img) -> list[Shadow
 def contours_to_shadows(contours: list) -> list[ShadowFeature]:
     shadows = []
 
-    for c in contours:
+    for contour in contours:
 
-        if cv2.contourArea(c) < tb.VALUES.S_MIN_CONTOUR_AREA:
+        if cv2.contourArea(contour) < tb.VALUES.S_MIN_CONTOUR_AREA:
             continue
 
         accuracy = tb.VALUES.S_CORNER_ACCURACY
-        perimeter = cv2.arcLength(c, True)
-        corners = cv2.approxPolyDP(c, perimeter * 0.0001 * accuracy, False)
+        perimeter = cv2.arcLength(contour, True)
+        corners = cv2.approxPolyDP(contour, perimeter * 0.0001 * accuracy, False)
         points = corners_to_points(corners)
 
         # Punkte mit ähnlichen Koordinaten zusammenfassen
@@ -160,47 +160,43 @@ def corners_to_points(corners: list) -> list[Point]:
     points: list[Point] = []
 
     for c in corners:
-        points.append(Point(c[0][0], c[0][1]))
+        x, y = c[0]
+        points.append(Point(x, y))
 
     return points
 
 
 
 def summarize_similar_points(points: list[Point]) -> None:
-    for i in range(len(points)):
+    TOLERANCE = 10
 
-        # for every point calculate sum of x and y values for other points near the point i
-
-        a = points[i]
-        
+    for i, a in enumerate(points):
         indexs = [i]
-        x_sum = a.x
-        y_sum = a.y
+        avg = a
 
-        for j in range(len(points)):
+        for j, b in enumerate(points):
             if i == j: 
                 continue
 
-            b = points[j]
-
-            if distance(a, b) < 10:
+            if distance(a, b) < TOLERANCE:
                 indexs.append(j)
-                x_sum += b.x
-                y_sum += b.y
+                avg += b
 
-        # calculate averave of selected points
-        x_sum /= len(indexs)
-        y_sum /= len(indexs)
+        avg /= len(indexs)
 
         # set new averaged position for point
         for idx in indexs:
-            points[idx] = Point(x_sum, y_sum)
+            points[idx] = avg.copy()
 
 
 
 # Calculates and returns the distance between the points a and b
 def distance(a: Point, b: Point) -> float:
-    return np.linalg.norm((a.to_np_int_array() - b.to_np_int_array()), 2)
+    diff = (a - b).to_np_array()
+    
+    dist = np.linalg.norm(diff, 2)
+
+    return dist
 
 
 
@@ -225,6 +221,7 @@ def generate_edges(corners: list[Point]) -> list[Edge]:
 # Checks if edges contains the edge between a and b 
 def edge_exists(edges: list[Edge], a: Point, b: Point) -> bool:
     new_edge = Edge(a, b)
+
     for edge in edges:
         if edge == new_edge:
             return True
@@ -235,20 +232,20 @@ def edge_exists(edges: list[Edge], a: Point, b: Point) -> bool:
 
 def find_split_points(edges: list[Edge]) -> list[Point]:
     # Prüfen, ob die Figur in kleiner Figuren zerlegt werden kann
-    x: dict[Point, int] = {}
+    d: dict[Point, int] = {}
     # Zählen, wieviele Kante an jedem Eckpunkt anliegen
     for edge in edges:
         for i in range(2):
-            a = edge.get(i)
-            val = x.setdefault(a, 0)
-            x[a] = val + 1
+            vertex = edge.get(i)
+            count = d.setdefault(vertex, 0)
+            d[vertex] = count + 1
     
     # Die Figur kann nur an Punkten zerlegt werden, an denen mindestens
     # vier Kanten anliegen
     split_vertices: list[Point] = []
-    for k, v in x.items():
-        if v >= 4:
-            split_vertices.append(k)
+    for vertex, count in d.items():
+        if count >= 4:
+            split_vertices.append(vertex)
 
     return split_vertices
 
@@ -275,26 +272,12 @@ def calculate_angles(shadow: ShadowFeature) -> tuple[list[float], list[float]]:
     angles_1: list[float] = []
     angles_2: list[float] = []
 
-    for i in range(len(shadow.points)):
+    for i, v in enumerate(shadow.points):
 
-        v = shadow.points[i].to_np_int_array()
-        a = shadow.points[(i+1)%len(shadow.points)].to_np_int_array()
-        b = shadow.points[(i-1)%len(shadow.points)].to_np_int_array()
+        a = shadow.points[(i+1) % len(shadow.points)] - v
+        b = shadow.points[(i-1) % len(shadow.points)] - v
 
-        a = a - v
-        b = b - v
-
-        dot_prod = np.dot(a, b)
-        len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
-
-        angle = math.acos(max(min(dot_prod / len_prod, 1), -1))
-        angle = math.degrees(angle)
-
-        # acos() gibt nur Werte <=180° zurück
-        # hier korrigieren wir größere Innenwinkel
-        cross_prod = np.cross(a, b)
-        if cross_prod < 0:
-            angle = 360 - angle
+        angle = Point.angle(a, b, True)
 
         angles_1.append(angle)
         angles_2.append(360 - angle)
@@ -306,10 +289,11 @@ def calculate_angles(shadow: ShadowFeature) -> tuple[list[float], list[float]]:
 # Alle Winkel müssen Vielfache von 45° sein
 # Hier werden Messungenauigkeiten entfernt
 def fix_angles(angles: list[float]) -> None:
-    for i in range(len(angles)):
-        for j in range(8):
+    for i, angle in enumerate(angles):
+        for j in range(8): # 360/45=8
             perfect_angle = (j+1)*45
-            if abs( perfect_angle - angles[i] ) <= 22.5:
+
+            if abs( perfect_angle - angle ) <= 22.5:
                 angles[i] = perfect_angle
                 break
 
@@ -319,8 +303,8 @@ def fix_angles(angles: list[float]) -> None:
 def remove_straight_angles(shadow: ShadowFeature, angles_1: list[float], angles_2: list[float]) -> None:
     to_remove: list[int] = []
     
-    for i in range(len(angles_1)):
-        if angles_1[i] == 180:
+    for i, angle in enumerate(angles_1):
+        if angle == 180:
             to_remove.append(i)
     
     # Invert list
@@ -344,10 +328,10 @@ def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[list[Ed
 
             for i in range(2):
                 if edge.get(i) == start_vertex:
-                    ee = edges.copy()
-                    ee.pop(e_idx)
+                    rec_edges = edges.copy()
+                    rec_edges.pop(e_idx)
 
-                    sub_shadow = tri_wok(ee, start_vertex, edge.get(1-i), split_vertices)
+                    sub_shadow = tri_wok(rec_edges, start_vertex, edge.get(1-i), split_vertices)
 
                     if sub_shadow is None:
                         continue
@@ -356,10 +340,10 @@ def split_shadow(edges: list[Edge], split_vertices: list[Point]) -> list[list[Ed
 
 
                     # remove sub_shadow from edges
-                    for ss_edge in sub_shadow:
-                        for ee_idx, eedge in enumerate(edges):
-                            if edges_equal_direction_sensitive(eedge, ss_edge):
-                                edges.pop(ee_idx)
+                    for sub_edge in sub_shadow:
+                        for tr_idx, tr_edge in enumerate(edges):
+                            if edges_equal_direction_sensitive(tr_edge, sub_edge):
+                                edges.pop(tr_idx)
                                 break
 
                     shadows.append(sub_shadow)
@@ -406,11 +390,11 @@ def tri_wok(edges: list[Edge], start_vertex: Point, current_vertex: Point, split
 
                 # Aktuelle Kante aus edges entfernen, damit sie bei
                 # rekursiven Aufrufen nicht erneut benutzt wird
-                ee = edges.copy()
-                ee.pop(e_idx)
+                rec_edges = edges.copy()
+                rec_edges.pop(e_idx)
 
                 # Rekursiver Aufruf, um den Pfad weiter aufzubauen
-                sub_shadow = tri_wok(ee, start_vertex, edge.get(1-i), split_vertices)
+                sub_shadow = tri_wok(rec_edges, start_vertex, edge.get(1-i), split_vertices)
 
                 # None wird nur zurückgegeben, wenn der Pfad ungültig ist
                 # es kann also einfach weitergegeben werden
@@ -426,12 +410,13 @@ def tri_wok(edges: list[Edge], start_vertex: Point, current_vertex: Point, split
 
 
 
-# Kanten im (oder gegen den) Uhrzeigersinn sortierern
+# Eckpunkte des Shadows im Kreis sortierern
 def sort_shadow_edges(shadows: list[list[Edge]]) -> list[ShadowFeature]:
-    sorted_shadows: list[ShadowFeature] = []
+    features: list[ShadowFeature] = []
 
     for shadow in shadows:
         sorted_points = [shadow[0].p2]
+
         while len(shadow) > 0:
             for e_idx, edge in enumerate(shadow):
                 found = False
@@ -449,6 +434,6 @@ def sort_shadow_edges(shadows: list[list[Edge]]) -> list[ShadowFeature]:
         # Start- und Endpunkt sind gleich -> einer kann weg
         sorted_points.pop(0)
 
-        sorted_shadows.append(ShadowFeature(sorted_points))
+        features.append(ShadowFeature(sorted_points))
 
-    return sorted_shadows
+    return features

@@ -131,7 +131,11 @@ class Point:
         dot_prod = np.dot(a, b)
         len_prod = abs(np.linalg.norm(a)) * abs(np.linalg.norm(b))
 
-        angle = math.acos( dot_prod / len_prod )
+        quot = dot_prod / len_prod
+        quot = min(quot, 1)
+        quot = max(quot, -1)
+
+        angle = math.acos(quot)
         angle = math.degrees(angle)
 
         if fix_reflex_angles:
