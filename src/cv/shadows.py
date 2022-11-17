@@ -287,7 +287,7 @@ def calculate_angles(shadow: ShadowFeature) -> tuple[list[float], list[float]]:
         dot_prod = np.dot(a, b)
         len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
 
-        angle = math.acos(dot_prod / len_prod)
+        angle = math.acos(min(dot_prod / len_prod, 1))
         angle = math.degrees(angle)
 
         # acos() gibt nur Werte <=180° zurück

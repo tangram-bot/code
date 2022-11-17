@@ -72,8 +72,7 @@ def main() -> None:
     # if instructions is None:
     # ...
 
-    # TODO: Move blocks to correct positions
-    # robot.move_blocks(instructions)
+    robot.move_blocks(instructions)
 
     # We're done, the robot can go to sleep
     robot.shutdown()

@@ -8,7 +8,7 @@ from enum import Enum
 # Umrechnungsfaktoren zwischen Bildern und unseren Modellen
 AREA_FACTOR = 16000
 AREA_FACTOR_SHADOW = 14290
-LENGTH_FACTOR = 123
+LENGTH_FACTOR = 125
 
 
 
@@ -271,25 +271,7 @@ class Edge:
         if(angle < 1):
             return False
 
-        b1 = self.p1
-        b11 = b1.x
-        b12 = b1.y
-
-        r1 = self.p2 - self.p1
-        r11 = r1.x
-        r12 = r1.y
-
-        b2 = other.p1
-        b21 = b2.x
-        b22 = b2.y
-
-        r2 = other.p2 - other.p1
-        r21 = r2.x
-        r22 = r2.y
-
-        s = (r22 * (b11 - b21) - r21 * (b12 - b22)) / (r12 * r21 - r11 * r22)
-        t = (b11 - b21 + s * r11) / r21
-
+        s, t = intersection_parameters(self, other)
         eps = 0.09 # TODO: vielleicht nochmal anpassen :)
         return (eps < s < 1-eps) and (eps < t < 1-eps)
 
@@ -325,7 +307,36 @@ def angle_between_edges(e1: Edge, e2: Edge) -> float:
     dot_prod = np.dot(a, b)
     len_prod = np.linalg.norm(a, 2) * np.linalg.norm(b, 2)
 
-    angle = math.acos(dot_prod / len_prod)
+    div = dot_prod / len_prod
+    div = max(-1, div)
+    div = min(div, 1)
+
+    angle = math.acos(div)
     angle = math.degrees(angle)
 
     return angle
+
+def intersection_parameters(e1: Edge, e2: Edge) -> tuple[float, float]:
+    b1 = e1.p1
+    b11 = b1.x
+    b12 = b1.y
+
+    r1 = e1.p2 - e1.p1
+    r11 = r1.x
+    r12 = r1.y
+
+    b2 = e2.p1
+    b21 = b2.x
+    b22 = b2.y
+
+    r2 = e2.p2 - e2.p1
+    r21 = r2.x
+    r22 = r2.y
+
+    s = (r22 * (b11 - b21) - r21 * (b12 - b22)) / (r12 * r21 - r11 * r22)
+    if(r21 != 0):
+        t = (b11 - b21 + s * r11) / r21
+    else:
+        t = (b12 - b22 + s * r12) / r22
+
+    return s, t

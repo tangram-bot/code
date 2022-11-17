@@ -11,9 +11,13 @@ from os import getenv
 from PIL import Image
 from exception import TangramException
 from main import get_run_env
+from solver import MoveInstruction
 
 
 L = logging.getLogger('Robot')
+
+IMAGE_WIDTH = 905
+IMAGE_HEIGHT = 640
 
 SCAN_POSE_BLOCKS = [0.01, 0.15, 0.35, 0.0, pi/2, 1.57]
 SCAN_POSE_SHADOW = [-0.005, -0.14, 0.35, 0.0, pi/2, -1.57]
@@ -27,7 +31,7 @@ WORKSPACE_HEIGHT = 210
 WORKSPACE_RATIO = WORKSPACE_WIDTH / WORKSPACE_HEIGHT
 
 import pyniryo.vision.markers_detection as x
-x.IM_EXTRACT_SMALL_SIDE_PIXELS = 640
+x.IM_EXTRACT_SMALL_SIDE_PIXELS = IMAGE_HEIGHT
 
 bot: NiryoRobot = None
 mtx = None
@@ -81,6 +85,7 @@ def scan_blocks():
 
     # move to scan position
     bot.arm.move_pose(SCAN_POSE_BLOCKS)
+    bot.arm.move_pose(SCAN_POSE_BLOCKS)
     bot.arm.move_pose(SCAN_POSE_BLOCKS) # maybe this fixes some issues with not recognizing the workspace, maybe not, has to be observed
     
     ws = take_picture()
@@ -92,6 +97,7 @@ def scan_shadow():
     if(bot == None):
         return mock_image("shadow")
 
+    bot.arm.move_pose(SCAN_POSE_SHADOW)
     bot.arm.move_pose(SCAN_POSE_SHADOW)
     bot.arm.move_pose(SCAN_POSE_SHADOW)
 
@@ -176,5 +182,11 @@ def close() -> None:
     
     L.info('Closing connection...')
     bot.end()
+
+def move_blocks(instructions: list[MoveInstruction]) -> None:
+    for instruction in instructions:
+        pick(instruction.block.center.x / IMAGE_WIDTH, instruction.block.center.y / IMAGE_HEIGHT)
+        place(instruction.position.x / IMAGE_WIDTH, instruction.position.y / IMAGE_HEIGHT, instruction.rotation )
+    
 
 atexit.register(close)
