@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 from typing import List
-from model import Point, Block, BlockType, Shadow, Edge
+from model import Point, Block, BlockType, Shadow, Edge, intersection_parameters
 from exception import TangramException
 
 
@@ -128,7 +128,7 @@ def __get_block_rotation(shadow: Shadow, block: Block) -> float:
     if rotation is None:
         raise TypeError(f'Block has an invalid type: {block.btype._name_}')
 
-    return rotation(shadow)
+    return rotation(shadow) - block.rotation
 
 
 def __get_angle_square(shadow: Shadow) -> float:
@@ -320,8 +320,47 @@ def __to_edges(vertices: list[Point]) -> list[Edge]:
 
 def __intersecting_edges(block: list[Edge], shadow: list[Edge]) -> bool:
     for be in block:
+        # point_in_shadow = False
         for se in shadow:
             if be.intersects_with(se):
                 return True
+            # e = Edge(be.p1, be.p1 + Point(1, 0))
+            # s, t = intersection_parameters(e, se)
+            # if(s > 0):
+            #     point_in_shadow = not point_in_shadow
+            
+        # if(not point_in_shadow):
+        #     return True
+    # block_points = [be.p1 for be in block]
+    # shadow_points = [se.p1 for se in shadow]
+
+    # print("intersect")
+
+    # for test_point in block_points:
+
+    #     print(test_point, bv)
+    #     if(test_point == bv):
+    #         print("cont")
+    #         continue
+
+    #     sum = 0
+
+    #     for sp_idx in range(len(shadow_points)):
+    #         shadow_point_1 = shadow_points[sp_idx - 1]
+    #         shadow_point_2 = shadow_points[sp_idx]
+
+    #         if(shadow_point_1 == test_point or shadow_point_2 == test_point):
+    #             continue
+
+    #         vector_1 = shadow_point_1.to_np_int_array() - test_point.to_np_int_array()
+    #         vector_2 = shadow_point_2.to_np_int_array() - test_point.to_np_int_array()
+
+    #         sum += helper.vector_angle(vector_1, vector_2)
+
+    #     print(sum)
+    #     print()
+
+    #     if(sum < 350):
+    #        return True
 
     return False

@@ -163,8 +163,8 @@ class Polygon:
             center.x += v.x
             center.y += v.y
 
-        center.x //= len(self.vertices)
-        center.y //= len(self.vertices)
+        center.x /= len(self.vertices)
+        center.y /= len(self.vertices)
 
         return center
 
