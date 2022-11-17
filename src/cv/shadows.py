@@ -289,7 +289,7 @@ def calculate_angles(shadow: ShadowFeature) -> tuple[list[float], list[float]]:
 # Alle Winkel müssen Vielfache von 45° sein
 # Hier werden Messungenauigkeiten entfernt
 def fix_angles(angles: list[float]) -> None:
-    for i, angle in enumerate(angle):
+    for i, angle in enumerate(angles):
         for j in range(8): # 360/45=8
             perfect_angle = (j+1)*45
 
