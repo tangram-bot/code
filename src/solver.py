@@ -127,7 +127,7 @@ def __get_block_rotation(shadow: Shadow, block: Block) -> float:
     if rotation is None:
         raise TypeError(f'Block has an invalid type: {block.btype._name_}')
 
-    return rotation(shadow)
+    return rotation(shadow) - block.rotation
 
 
 def __get_angle_square(shadow: Shadow) -> float:
