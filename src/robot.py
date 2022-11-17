@@ -13,6 +13,7 @@ from exception import TangramException
 from main import get_run_env
 from solver import MoveInstruction
 import math
+import signal
 
 
 L = logging.getLogger('Robot')
@@ -41,6 +42,8 @@ capture = None
 
 camera_calibration = pickle.load(open("resources/camera_calib.p", "rb" ))
 
+
+GRIPPER_OFFSET= (-0.009, 0.0)
 
 def get_high_res_camera_intrinsics():
     return camera_calibration["mtx"], camera_calibration["dist"]
@@ -123,21 +126,39 @@ def take_picture():
     return ws
 
 
-def pick(x, y) -> None:
+def gripper_offset(rotate, negate_constant_offset):
+
+    multiplyer = -1 if negate_constant_offset else 1
+
+    gripper_offset_x = math.cos(rotate) * GRIPPER_OFFSET[0] - math.sin(rotate) * GRIPPER_OFFSET[1]
+    gripper_offset_y = math.sin(rotate) * GRIPPER_OFFSET[0] + math.cos(rotate) * GRIPPER_OFFSET[1]
+    return gripper_offset_x - 0.006 * multiplyer, gripper_offset_y - 0.002 * multiplyer
+
+def pick(x, y, flip: bool) -> None:
     if(bot == None):
         return
 
     L.info(f"picking from {x}, {y}")
-
     # fix hardware with software
     # the gripper is not centered, so the position has to be corrected
     # this has to be done in place() as well, but there dynamically, as the gripper will rotate to the right orientation
-    x = min(x + 0.05, 1)
-    y = max(y - 0.03, 0)
+    
+    rotation = 0
+    if flip:
+        rotation = pi
+    offset: tuple[float, float] = gripper_offset(rotation, False)
 
-    pose_up = bot.vision.get_target_pose_from_rel("blocks", MOVEMENT_HEIGHT, x, y, GRIPPER_BASE_ROTATION)
-    pose_down = bot.vision.get_target_pose_from_rel("blocks", PICK_AND_PLACE_HEIGHT, x, y, GRIPPER_BASE_ROTATION)
+    pose_up = bot.vision.get_target_pose_from_rel("blocks", MOVEMENT_HEIGHT, x, y, 0)
+    pose_down = bot.vision.get_target_pose_from_rel("blocks", PICK_AND_PLACE_HEIGHT, x, y, 0)
 
+    pose_up.yaw = rotation
+    pose_down.yaw = rotation
+
+    pose_up.x += offset[0]
+    pose_up.y += offset[1]
+
+    pose_down.x += offset[0]
+    pose_down.y += offset[1]
 
     # move to position
     bot.tool.open_gripper()
@@ -157,12 +178,22 @@ def place(x, y, rotate) -> None:
 
     rotate = math.radians(rotate)
 
-    # rotation of 0 should be the same direction as the source rotation
-    # but because the piece of paper is on the other side of the robot, is has to be corrected here
-    rotate -= GRIPPER_BASE_ROTATION
-    
-    pose_up = bot.vision.get_target_pose_from_rel("shadow", MOVEMENT_HEIGHT, x, y, rotate)
-    pose_down = bot.vision.get_target_pose_from_rel("shadow", PICK_AND_PLACE_HEIGHT, x, y, rotate)
+    gripper_offset_x, gripper_offset_y = gripper_offset(rotate, True)
+
+    pose_up = bot.vision.get_target_pose_from_rel("shadow", MOVEMENT_HEIGHT, x, y, 0)
+    pose_down = bot.vision.get_target_pose_from_rel("shadow", PICK_AND_PLACE_HEIGHT, x, y, 0)
+
+    pose_up.roll = 0
+    pose_down.roll = 0
+
+    pose_up.yaw = rotate
+    pose_down.yaw = rotate
+
+    pose_up.x += gripper_offset_x
+    pose_up.y += gripper_offset_y
+
+    pose_down.x += gripper_offset_x
+    pose_down.y += gripper_offset_y
 
     # move to position
     bot.arm.move_pose(pose_up)
@@ -185,11 +216,18 @@ def close() -> None:
     
     L.info('Closing connection...')
     bot.end()
+    exit(0)
 
 def move_blocks(instructions: list[MoveInstruction]) -> None:
     for instruction in instructions:
-        pick(instruction.block.center.x / IMAGE_WIDTH, instruction.block.center.y / IMAGE_HEIGHT)
-        place(instruction.position.x / IMAGE_WIDTH, instruction.position.y / IMAGE_HEIGHT, instruction.rotation )
+        # blatt liegt auf der anderen seite -> 180 grad gedreht, rotation von 0, bedeutet 180 grad nach rechts
+        rotation = instruction.rotation + 180
+        if(rotation > 180):
+            # rotation größer 180 muss durch die drehung im pick abgefangen werden
+            rotation = rotation - 180
+        pick(instruction.block.center.x / IMAGE_WIDTH, instruction.block.center.y / IMAGE_HEIGHT, instruction.rotation < 0)
+        place(instruction.position.x / IMAGE_WIDTH, instruction.position.y / IMAGE_HEIGHT, rotation - 180 )
     
 
 atexit.register(close)
+signal.signal(signal.SIGINT, lambda _, __: close)
