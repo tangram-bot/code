@@ -72,7 +72,7 @@ def init() -> None:
 
 
 def mock_image(folder):
-    path = f"img/{folder}/"
+    path = f"resources/img/{folder}/"
     files = os.listdir(path)
     img_file = random.choice(files)
 
