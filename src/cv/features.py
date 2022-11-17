@@ -47,7 +47,11 @@ class BlockFeature:
             a = a.to_np_array()
             b = b.to_np_array()
 
-            angle = math.acos( np.dot(a, b) / ( abs(np.linalg.norm(a)) * abs(np.linalg.norm(b)) ) )
+            x = np.dot(a, b) / ( np.linalg.norm(a) * np.linalg.norm(b) )
+            x = min(x, 1)
+            x = max(x, -1)
+
+            angle = math.acos( x )
             angle = math.degrees(angle)
 
             if abs(45.0 - angle) <= TOLERANCE:

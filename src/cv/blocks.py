@@ -131,7 +131,7 @@ def __process_small_triangle(feature: BlockFeature, img) -> Block:
     interior_angles = feature.get_interior_angles()
     ref_vertex = feature.vertices[interior_angles.index(90)]
 
-    angle = Point.angle(ref_vertex - feature.center, Point(-1, -1))
+    angle = Point.angle(ref_vertex - feature.center, Point(-1, -1), True)
     
     cv2.line(img, feature.center.to_np_int_array(), ref_vertex.to_np_int_array(), (255, 0, 0), 3)
     L.debug(f'SMALL TRIANGLE: center={feature.center} angle={angle}°')
