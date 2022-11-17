@@ -1,6 +1,5 @@
 import math
 import numpy as np
-from sympy import Eq, solve, Symbol
 from pyniryo import cv2
 from enum import Enum
 
