@@ -230,4 +230,5 @@ def move_blocks(instructions: list[MoveInstruction]) -> None:
     
 
 atexit.register(close)
-signal.signal(signal.SIGINT, lambda _, __: close)
+if get_run_env() != "dev":
+    signal.signal(signal.SIGINT, lambda _, __: close)
