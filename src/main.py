@@ -3,8 +3,8 @@
 #=============#
 
 import argparse
-from dotenv import load_dotenv, find_dotenv
 import logging
+from dotenv import load_dotenv, find_dotenv
 
 
 load_dotenv(find_dotenv())
@@ -37,6 +37,8 @@ import cv
 import solver
 
 from pyniryo import cv2
+import numpy as np
+from random import random
 
 
 L = logging.getLogger('Main')
@@ -57,17 +59,24 @@ def main() -> None:
     shadows = cv.find_shadows(img_shadow)
 
     # Find solution
-    solution = solver.solve(blocks, shadows)
+    img_temp_sol = img_shadow.copy()
+    instructions = solver.solve(blocks, shadows, img_temp_sol)
+    cv2.imshow('Solution Debug', img_temp_sol)
+
+    img_solution = img_shadow.copy()
+    for i in instructions:
+        i.block.draw(img_solution, (int(random() * 255), int(random() * 255), int(random() * 255)), i.rotation, i.position)
+    cv2.imshow('Solution', img_solution)
     
     # TODO: Handling if no solution could be found
-    # if solution is None:
+    # if instructions is None:
     # ...
 
-    # TODO: Move blocks to correct positions
-    # robot.move_blocks(solution)
+    robot.move_blocks(instructions)
 
     # We're done, the robot can go to sleep
     robot.shutdown()
+    robot.close()
 
     while True:
         cv2.waitKey(1)

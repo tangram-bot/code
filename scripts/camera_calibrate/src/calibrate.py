@@ -8,7 +8,7 @@ import glob # Used to get retrieve files that have a specified pattern
 import pickle
  
 # Path to the image that you want to undistort
-distorted_img_filename = 'img/cam-calibration/01.png'
+distorted_img_filename = 'resources/img/cam-calibration/01.png'
  
 # Chessboard dimensions
 number_of_squares_X = 10 # Number of chessboard squares along the x-axis
