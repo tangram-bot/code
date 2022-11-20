@@ -255,6 +255,9 @@ class Shadow(Polygon):
 
 
 class Edge:
+
+    eps = 0.09 # TODO: vielleicht nochmal anpassen :)
+ 
     p1: Point
     p2: Point
 
@@ -273,10 +276,8 @@ class Edge:
         angle = angle_between_edges(self, other)
         if(angle < 1):
             return False
-
         s, t = intersection_parameters(self, other)
-        eps = 0.09 # TODO: vielleicht nochmal anpassen :)
-        return (eps < s < 1-eps) and (eps < t < 1-eps)
+        return (self.eps < s < 1-self.eps) and (self.eps < t < 1-self.eps)
 
 
 
