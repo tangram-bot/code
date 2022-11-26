@@ -23,3 +23,4 @@ python src/main.py -e prod
 |----------|-----------|--------------|-------|---------|
 |-e        | --env       | Mit Roboter verbinden oder Mock-Bilder zum Testen nutzen? | `dev` - Mock-Bilder nutzen <br>`prod` - mit Roboter verbinden | `dev`
 |-tb       | --trackbars | Config-Fenster mit Slidern sichtbar machen | gesetzt/nicht gesetzt | nicht gesetzt |
+|-s        | --sound     | Tonausgabe aktivieren | gesetzt / nicht gesetzt | nicht gesetzt |
