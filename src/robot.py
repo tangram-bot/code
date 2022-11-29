@@ -229,5 +229,5 @@ def move_blocks(instructions: list[MoveInstruction]) -> None:
         place(instruction.position.x / IMAGE_WIDTH, instruction.position.y / IMAGE_HEIGHT, rotation - 180 )
     
 
-atexit.register(close)
-signal.signal(signal.SIGINT, lambda _, __: close)
+# atexit.register(close)
+# signal.signal(signal.SIGINT, lambda _, __: close)

@@ -11,6 +11,41 @@ from cv.features import ShadowFeature
 L = logging.getLogger('CV-Shadows')
 
 
+
+
+
+
+def prepare_shadow_image(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, img = cv2.threshold(img, 80, 255, cv2.THRESH_BINARY_INV)
+
+    __remove_markers(img)
+
+    return img
+
+
+def __remove_markers(img) -> None:
+    h, w = img.shape
+    marker_size = 70
+
+    cv2.rectangle(img, [0, 0], [marker_size, marker_size], 0, -1)
+    cv2.rectangle(img, [w-marker_size, 0], [w, marker_size], 0, -1)
+    cv2.rectangle(img, [w-marker_size, h-marker_size], [w, h], 0, -1)
+    cv2.rectangle(img, [0, h-marker_size], [marker_size, h], 0, -1)
+
+
+def __open(img, k_size=9):
+    kernel = np.ones((k_size, k_size))
+
+    img = cv2.erode(img, kernel)
+    img = cv2.dilate(img, kernel)
+
+    return img
+
+
+
+
+
 def find_shadows(img) -> list[Shadow]:
     features = __find_shadow_features(img)
     
@@ -25,11 +60,9 @@ def find_shadows(img) -> list[Shadow]:
 
 
 def __find_shadow_features(img) -> list[ShadowFeature]:
-    img_gray = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2GRAY)
-    
     threshold1 = tb.VALUES.S_CANNY_1
     threshold2 = tb.VALUES.S_CANNY_2
-    img_canny = cv2.Canny(img_gray, threshold1, threshold2)
+    img_canny = cv2.Canny(img, threshold1, threshold2)
 
     kernel_size = 2
     kernel = np.ones((kernel_size, kernel_size))

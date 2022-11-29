@@ -22,6 +22,7 @@ def show_trackbars():
 
 logLevels={
     'prod': logging.INFO,
+    'dev': logging.WARNING
 }
 logLevel = logLevels.get(get_run_env(), logging.DEBUG)
 
@@ -52,20 +53,18 @@ def main() -> None:
 
     # Take pictures of blocks & shadow
     img_blocks = robot.scan_blocks()
-    img_shadow = robot.scan_shadow()
+    img_shadow_raw = robot.scan_shadow()
+    img_shadow = cv.prepare_shadow_image(img_shadow_raw)
 
     # Procecss pictures & extract data
     blocks = cv.find_blocks(img_blocks)
-    shadows = cv.find_shadows(img_shadow)
 
     # Find solution
-    img_temp_sol = img_shadow.copy()
-    instructions = solver.solve(blocks, shadows, img_temp_sol)
-    cv2.imshow('Solution Debug', img_temp_sol)
+    instructions = solver.solve(blocks, img_shadow)
 
-    img_solution = img_shadow.copy()
+    img_solution = img_shadow_raw.copy()
     for i in instructions:
-        i.block.draw(img_solution, (int(random() * 255), int(random() * 255), int(random() * 255)), i.rotation, i.position)
+        i.block.draw(img_solution, (int(random() * 255), int(random() * 255), int(random() * 255)), i.rotation+i.block.rotation, i.position)
     cv2.imshow('Solution', img_solution)
     
     # TODO: Handling if no solution could be found

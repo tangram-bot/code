@@ -22,19 +22,28 @@ class MoveInstruction:
         self.rotation = rotation
 
 
-def solve(blocks: List[Block], shadows: list[Shadow], img) -> list[MoveInstruction]:
+from cv import find_shadows
+cyk = 0
+def solve(blocks: List[Block], img_shadow) -> list[MoveInstruction]:
     """
     Ermittelt eine Lösung für die übergebenen Blöcke und Shadows
     """
+    global cyk
+    cyk += 1
+    cv2.imshow(str(cyk), img_shadow)
+
+    shadows = find_shadows(img_shadow.copy())
+
+    print('\n', len(blocks), [b.btype._name_ for b in blocks], '\n')
 
     # __check_too_few_blocks(blocks, shadows)
 
     instructions: list[MoveInstruction] = []
     
-    instr = __check_plain_blocks(blocks, shadows)
-    instructions.extend(instr)
+    # instr = __check_plain_blocks(blocks, shadows)
+    # instructions.extend(instr)
 
-    instr = __solve_rest(blocks, shadows, img)
+    instr = __solve_rest(blocks, shadows, img_shadow.copy())
     instructions.extend(instr)
 
     return instructions
@@ -161,10 +170,16 @@ def __solve_rest(blocks: list[Block], shadows: list[Shadow], img) -> list[MoveIn
     # Blocks absteigend nach Größe sortieren
     blocks.sort(key=lambda b: b.area, reverse=True)
 
+    tmp_blocks = blocks.copy()
+
     instructions: list[MoveInstruction] = []
 
     for s in shadows:
-        instr = __solve_loop(blocks, s, img)
+        
+        im = np.zeros(shape=img.shape, dtype=np.uint8)
+        cv2.fillPoly(im, Point.list_to_np_array(s.vertices), 255)
+
+        instr = __solve_loop(tmp_blocks, s, im)
 
         if instr is None:
             L.info(f'Couldn\'t find a solution for {s}')
@@ -175,11 +190,18 @@ def __solve_rest(blocks: list[Block], shadows: list[Shadow], img) -> list[MoveIn
     return instructions
 
 from pyniryo import cv2
-def __solve_loop(blocks: list[Block], shadow: Shadow, img) -> list[MoveInstruction] | None:
+import numpy as np
+def __solve_loop(blocks: list[Block], shadow: Shadow, m_img) -> list[MoveInstruction] | None:
 
-    for sv_idx, sv in enumerate(shadow.vertices):
-        for b_idx, b in enumerate(blocks):
+    for b_idx, b in enumerate(blocks):
+        for sv_idx, sv in enumerate(shadow.vertices):
+
+            # if b.area > shadow.area:
+            #     continue
+
             for bv_idx, bv in enumerate(b.vertices):
+
+                img = m_img.copy()
 
                 # Verhältnis der Innenwinkel bei sv und bv
                 angle_ratio = shadow.interior_angles[sv_idx] / b.interior_angles[bv_idx]
@@ -193,50 +215,85 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, img) -> list[MoveInstructi
                 # # => Block muss nur ein mal angelegt werden
                 # elif angle_ratio == 1:
 
-                cv2.line(img, shadow.get_vertex(sv_idx-1).to_np_int_array(), sv.to_np_int_array(), (255, 255, 0), 5)
-                cv2.circle(img, sv.to_np_int_array(), 10, (0, 255, 255), -1)
+                color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+                cv2.line(color, sv.to_np_int_array(), shadow.get_vertex(sv_idx-1).to_np_int_array(), (0, 255, 0), 1)
+                cv2.line(color, sv.to_np_int_array(), shadow.get_vertex(sv_idx+1).to_np_int_array(), (0, 0, 255), 1)
 
                 s_vec = shadow.get_vertex(sv_idx-1) - sv
-
                 b_vec = b.get_vertex(bv_idx-1) - bv
-
                 angle = Point.angle(s_vec, b_vec, True)
 
-                block_vertices = b.get_scaled_vertices()
+                if angle_ratio == 1:
+                    s_vec2 = shadow.get_vertex(sv_idx+1) - sv
+                    b_vec2 = b.get_vertex(bv_idx+1) - bv
+                    angle2 = Point.angle(s_vec2, b_vec2, True)
 
-                block_vertices = Point.move_points(block_vertices, sv- block_vertices[bv_idx])
+                    if angle2 - angle > 180:
+                        angle += 360
+                    if angle - angle2 > 180:
+                        angle2 += 360
+
+                    aa = np.linalg.norm(s_vec.to_np_array())
+                    bb = np.linalg.norm(s_vec2.to_np_array())
+                    cc = aa + bb
+                    aa = aa / cc
+                    bb = bb / cc
+                    angle = (aa * angle + bb * angle2)
+
+
+
+                block_vertices = b.get_scaled_vertices()
+                block_vertices = Point.move_points(block_vertices, sv-block_vertices[bv_idx])
                 block_vertices = Point.rotate_around_point(block_vertices, sv, angle)
 
-                cv2.polylines(img, Point.list_to_np_array(block_vertices), True, (125, 0, 125), 6)
+                
+                im = np.zeros(shape=img.shape, dtype=np.uint8)
+                cv2.fillPoly(im, Point.list_to_np_array(block_vertices), 255)
 
-                block_edges = __to_edges(block_vertices)
-                shadow_edges = __to_edges(shadow.vertices)
-
-                # TODO: https://discordapp.com/channels/@me/799333662964449311/1041824146922946571
-                if __intersecting_edges(block_edges, shadow_edges):
+                diff = cv2.subtract(im, img)
+                diff = cv2.erode(diff, np.ones((5, 5)))
+                diff = cv2.dilate(diff, np.ones((5, 5)))
+                summ = np.sum(diff==255)
+                if summ > 100:
                     continue
 
+                cv2.fillPoly(img, Point.list_to_np_array(block_vertices), 200)
+
+                cv2.fillPoly(img, Point.list_to_np_array(block_vertices), 0)
+                img = cv2.erode(img, np.ones((5, 5)))
+                img = cv2.dilate(img, np.ones((5, 5)))
+
+                # genutzten Block entfernen
+                # print('\n')
+                # print('REMOVE', remaining_blocks[b_idx].btype)
+                blocks.pop(b_idx)
+                # print([b.btype for b in blocks])
+                # print([b.btype for b in remaining_blocks])
                 
-                shadow_vertices = shadow.vertices.copy()
-                block_vertices.pop(bv_idx)
-                block_vertices.reverse()
-                if angle_ratio == 1:
-                    shadow_vertices.pop(sv_idx)
-                shadow_vertices = shadow_vertices[:sv_idx] + block_vertices + shadow_vertices[sv_idx:]
-
-                cv2.polylines(img, Point.list_to_np_array(shadow_vertices), True, (255, 255, 255), 5)
-
-                # TODO: bisschen post processing
-                # TODO: genutzte Blöcke entfernen
                 # TODO: rekursiver Aufruf
+                instructions = solve(blocks, img)
 
-                return 
+                if instructions is None:
+                    blocks.append(b)
+                    continue
+
+                center = Point.get_center(block_vertices)
+
+                angle -= b.rotation
+
+                instructions.append(MoveInstruction(b, center, angle))
+
+                # blocks.pop(b_idx)
+
+
+                return instructions
+
                 # # Winkel vom Block ist kleiner als der des Shadows
                 # # => Block muss an beide Kanten angelegt werden
                 # else:
                 #     pass
 
-    return []
+    return None
 
 
 def __valid_pos(shadow, block, sv_idx, bv_idx, angle) -> bool:
