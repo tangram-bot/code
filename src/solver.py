@@ -196,7 +196,8 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, m_img) -> list[MoveInstruc
     for b_idx, b in enumerate(blocks):
         for sv_idx, sv in enumerate(shadow.vertices):
 
-            # if b.area > shadow.area:
+            # TODO: geeigneten Wert für Epsilon-Schlauch finden
+            # if b.area - shadow.area > XY:
             #     continue
 
             for bv_idx, bv in enumerate(b.vertices):
@@ -215,15 +216,22 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, m_img) -> list[MoveInstruc
                 # # => Block muss nur ein mal angelegt werden
                 # elif angle_ratio == 1:
 
+                # TODO: Debug Code entfernen
                 color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
                 cv2.line(color, sv.to_np_int_array(), shadow.get_vertex(sv_idx-1).to_np_int_array(), (0, 255, 0), 1)
                 cv2.line(color, sv.to_np_int_array(), shadow.get_vertex(sv_idx+1).to_np_int_array(), (0, 0, 255), 1)
 
+                # Nötige Drehung des Blocks berechnen
                 s_vec = shadow.get_vertex(sv_idx-1) - sv
                 b_vec = b.get_vertex(bv_idx-1) - bv
                 angle = Point.angle(s_vec, b_vec, True)
 
+                # Falls die Winkel vom Block und vom Shadow gleich groß sind,
+                # betrachten wir zur Berechnung der Drehung des Blocks zusätzlich
+                # die zweite Kante und bilden ein gewichtetes Mittel abhängig
+                # von der Kantenlänge
                 if angle_ratio == 1:
+                    # Winkel der zweiten Kante berechnen
                     s_vec2 = shadow.get_vertex(sv_idx+1) - sv
                     b_vec2 = b.get_vertex(bv_idx+1) - bv
                     angle2 = Point.angle(s_vec2, b_vec2, True)
@@ -233,23 +241,27 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, m_img) -> list[MoveInstruc
                     if angle - angle2 > 180:
                         angle2 += 360
 
+                    # Gewichtungen der Winkel bestimmen
                     aa = np.linalg.norm(s_vec.to_np_array())
                     bb = np.linalg.norm(s_vec2.to_np_array())
                     cc = aa + bb
                     aa = aa / cc
                     bb = bb / cc
+
+                    # Gewichteten Winkel berechnen
                     angle = (aa * angle + bb * angle2)
 
 
-
+                # Block skalieren und drehen
                 block_vertices = b.get_scaled_vertices()
                 block_vertices = Point.move_points(block_vertices, sv-block_vertices[bv_idx])
                 block_vertices = Point.rotate_around_point(block_vertices, sv, angle)
 
-                
+                # Leeres Bild erstellen und Block einzeichnen
                 im = np.zeros(shape=img.shape, dtype=np.uint8)
                 cv2.fillPoly(im, Point.list_to_np_array(block_vertices), 255)
 
+                # Prüfen, ob der Block komplett innerhalb des Shadows liegt
                 diff = cv2.subtract(im, img)
                 diff = cv2.erode(diff, np.ones((5, 5)))
                 diff = cv2.dilate(diff, np.ones((5, 5)))
@@ -257,8 +269,7 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, m_img) -> list[MoveInstruc
                 if summ > 100:
                     continue
 
-                cv2.fillPoly(img, Point.list_to_np_array(block_vertices), 200)
-
+                # Block vom Shadow abziehen
                 cv2.fillPoly(img, Point.list_to_np_array(block_vertices), 0)
                 img = cv2.erode(img, np.ones((5, 5)))
                 img = cv2.dilate(img, np.ones((5, 5)))
@@ -269,22 +280,21 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, m_img) -> list[MoveInstruc
                 blocks.pop(b_idx)
                 # print([b.btype for b in blocks])
                 # print([b.btype for b in remaining_blocks])
-                
-                # TODO: rekursiver Aufruf
+
+                # Rekursiver Aufruf, um übrigen Teil des Shadows zu lösen                
                 instructions = solve(blocks, img)
 
+                # Keine Lösung gefunden -> wir können in den nächsten Schleifendurchlauf springen
                 if instructions is None:
                     blocks.append(b)
                     continue
 
+                # Move Instruction erstellen
                 center = Point.get_center(block_vertices)
-
                 angle -= b.rotation
-
                 instructions.append(MoveInstruction(b, center, angle))
 
                 # blocks.pop(b_idx)
-
 
                 return instructions
 
@@ -293,6 +303,7 @@ def __solve_loop(blocks: list[Block], shadow: Shadow, m_img) -> list[MoveInstruc
                 # else:
                 #     pass
 
+    # Landen wir an dieser Stelle, dann wurde keine Lösung gefunden
     return None
 
 
